@@ -9,12 +9,14 @@ import { TransactionDetailModal } from './components/TransactionDetailModal';
 import { RiskModelConfigModal } from './components/RiskModelConfigModal';
 import { ReportDetailModal } from './components/ReportDetailModal';
 import { UserEditModal } from './components/UserEditModal';
-import { MOCK_TRANSACTIONS, STAT_DATA, MOCK_CUSTOMERS, MOCK_ACCOUNTS, MOCK_MODELS, MOCK_RISK_MODELS, MOCK_USERS, MOCK_SYSTEM_LOGS, CUSTOMER_TYPE_DATA, RISK_DIST_DATA, TRX_VOLUME_DATA, MOCK_REPORTS } from './constants';
-import { Transaction, ReportStatus, TransactionType, MonitoringModel, RiskRatingModel, AiFeedback, Customer, RiskLevel, SystemUser, RegulatoryReport } from './types';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
-import { AlertOctagon, Banknote, CheckCircle2, Clock, Search, Filter, Plus, User, Building2, FileSearch, Settings2, Globe, AlertTriangle, Send, Bot, ListTodo, ArrowRightLeft, ShieldCheck, RefreshCw, FileCode } from 'lucide-react';
-
-const COLORS = ['#3b82f6', '#f59e0b', '#ef4444', '#10b981'];
+import { SelfInspectionModule } from './components/SelfInspectionModule';
+import { ScreeningModule } from './components/ScreeningModule';
+import { BeneficialOwnerModule } from './components/BeneficialOwnerModule';
+import { CddModule } from './components/CddModule';
+import { MOCK_TRANSACTIONS, STAT_DATA, MOCK_CUSTOMERS, MOCK_ACCOUNTS, MOCK_MODELS, MOCK_RISK_MODELS, MOCK_USERS, MOCK_SYSTEM_LOGS, RISK_DIST_DATA, TRX_VOLUME_DATA, MOCK_REPORTS, MOCK_CDD_CASES, MOCK_INSPECTION_ITEMS, MOCK_MONITORED_ENTITIES } from './constants';
+import { Transaction, ReportStatus, TransactionType, MonitoringModel, RiskRatingModel, AiFeedback, Customer, RiskLevel, SystemUser, RegulatoryReport, InspectionStatus, CddStatus } from './types';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell } from 'recharts';
+import { AlertOctagon, Banknote, CheckCircle2, Clock, Search, Filter, Plus, User, Building2, FileSearch, Settings2, Globe, AlertTriangle, Send, Bot, ArrowRightLeft, ShieldCheck, RefreshCw, FileCheck, ClipboardCheck, ScanFace, TrendingUp, FileText, Settings, Trash2, Users, Edit } from 'lucide-react';
 
 function App() {
   const [activeView, setActiveView] = useState('dashboard');
@@ -38,7 +40,6 @@ function App() {
   const [selectedReport, setSelectedReport] = useState<RegulatoryReport | null>(null);
 
   // System Management State
-  const [systemTab, setSystemTab] = useState<'users' | 'logs'>('users');
   const [users, setUsers] = useState<SystemUser[]>(MOCK_USERS);
   
   // Modals
@@ -117,11 +118,8 @@ function App() {
     }
   };
 
-  // Derived State
+  // Derived State for Alerts
   const pendingCount = transactions.filter(t => t.status === ReportStatus.PENDING_REVIEW).length;
-  const submittedCount = transactions.filter(t => [ReportStatus.SUBMITTED, ReportStatus.ACCEPTED].includes(t.status)).length;
-  const largeValueCount = transactions.filter(t => t.type === TransactionType.LARGE_VALUE).length;
-  const suspiciousCount = transactions.filter(t => t.type === TransactionType.SUSPICIOUS).length;
 
   // Filtered Transactions for Alert View
   const currentType = alertTab === 'large' ? TransactionType.LARGE_VALUE : TransactionType.SUSPICIOUS;
@@ -131,139 +129,205 @@ function App() {
     return true;
   });
 
-  // --- Render Sections ---
+  // --- Dashboard Logic ---
+  const renderDashboard = () => {
+    // CDD Logic
+    const activeCddCases = MOCK_CDD_CASES.filter(c => c.status !== CddStatus.APPROVED && c.status !== CddStatus.REJECTED).length;
+    
+    // Self Inspection Logic
+    const totalInspection = MOCK_INSPECTION_ITEMS.length;
+    const compliantInspection = MOCK_INSPECTION_ITEMS.filter(i => i.status === InspectionStatus.COMPLIANT).length;
+    const complianceScore = Math.round((compliantInspection / totalInspection) * 100);
+    
+    // Risk Logic
+    const highRiskCustomers = MOCK_CUSTOMERS.filter(c => c.riskRating === RiskLevel.CRITICAL || c.riskRating === RiskLevel.HIGH).length;
+    
+    // UBO Logic
+    let pendingUboCount = 0;
+    MOCK_CUSTOMERS.forEach(c => {
+        if(c.beneficialOwners) {
+            pendingUboCount += c.beneficialOwners.filter(u => u.status === '待核实').length;
+        }
+    });
+    
+    // Screening Logic
+    const monitoredEntityCount = MOCK_MONITORED_ENTITIES.length;
 
-  const renderDashboard = () => (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="待复核预警" value={pendingCount} icon={<Clock size={24} />} trend="+12% 较昨日" colorClass="bg-white border-l-4 border-l-amber-500" />
-        <StatCard title="可疑交易" value={suspiciousCount} icon={<AlertOctagon size={24} />} trend="+5% 较均值" colorClass="bg-white border-l-4 border-l-red-500" />
-        <StatCard title="大额交易" value={largeValueCount} icon={<Banknote size={24} />} trend="正常波动" colorClass="bg-white border-l-4 border-l-blue-500" />
-        <StatCard title="已上报数量" value={submittedCount} icon={<CheckCircle2 size={24} />} colorClass="bg-white border-l-4 border-l-emerald-500" />
-      </div>
-
-      {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Customer Type Stats */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <User size={18} className="text-blue-500"/> 客户类型分布
-            </h3>
-            <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                        <Pie
-                            data={CUSTOMER_TYPE_DATA}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={80}
-                            paddingAngle={5}
-                            dataKey="value"
-                        >
-                            {CUSTOMER_TYPE_DATA.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                        </Pie>
-                        <Tooltip />
-                        <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" className="text-2xl font-bold fill-slate-700">
-                            {MOCK_CUSTOMERS.length}
-                        </text>
-                        <text x="50%" y="60%" textAnchor="middle" dominantBaseline="middle" className="text-xs fill-slate-400">
-                            总客户数
-                        </text>
-                    </PieChart>
-                </ResponsiveContainer>
-                <div className="flex justify-center gap-6 mt-2">
-                    {CUSTOMER_TYPE_DATA.map((entry) => (
-                        <div key={entry.name} className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full" style={{backgroundColor: entry.color}}></div>
-                            <span className="text-sm text-slate-600">{entry.name} ({entry.value}%)</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
+    return (
+      <div className="space-y-6 animate-in fade-in duration-500">
+        {/* Key Metrics Row 1: Operational Health */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          <StatCard 
+            title="待处置案例 (Alerts)" 
+            value={pendingCount} 
+            icon={<AlertTriangle size={24} />} 
+            trend="+12% 较昨日" 
+            colorClass="bg-white border-l-4 border-l-amber-500" 
+          />
+          <StatCard 
+            title="尽调任务待办 (CDD)" 
+            value={activeCddCases} 
+            icon={<FileSearch size={24} />} 
+            trend="3 笔即将超期" 
+            colorClass="bg-white border-l-4 border-l-blue-500" 
+          />
+           <StatCard 
+            title="待核实受益人 (UBO)" 
+            value={pendingUboCount} 
+            icon={<Users size={24} />} 
+            trend="需补录证件" 
+            colorClass="bg-white border-l-4 border-l-indigo-500" 
+          />
+          <StatCard 
+            title="高/极高风险客户" 
+            value={highRiskCustomers} 
+            icon={<ShieldCheck size={24} />} 
+            trend="占总客户 8%" 
+            colorClass="bg-white border-l-4 border-l-red-500" 
+          />
+          <StatCard 
+            title="合规自检得分" 
+            value={complianceScore} 
+            icon={<ClipboardCheck size={24} />} 
+            trend={complianceScore < 90 ? "需整改" : "达标"} 
+            colorClass={`bg-white border-l-4 ${complianceScore < 90 ? 'border-l-amber-500' : 'border-l-emerald-500'}`} 
+          />
         </div>
 
-        {/* Risk Distribution */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <ShieldCheck size={18} className="text-blue-500"/> 账户风险等级分布
-            </h3>
-            <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={RISK_DIST_DATA} layout="vertical">
-                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                        <XAxis type="number" hide />
-                        <YAxis dataKey="name" type="category" width={60} tick={{fontSize: 12}} />
-                        <Tooltip cursor={{fill: 'transparent'}} />
-                        <Bar dataKey="value" barSize={20} radius={[0, 4, 4, 0]}>
-                            {RISK_DIST_DATA.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                        </Bar>
-                    </BarChart>
-                </ResponsiveContainer>
-            </div>
-        </div>
+        {/* Row 2: Charts & Trends */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Risk Distribution */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <TrendingUp size={18} className="text-blue-500"/> 全行客户风险分布
+              </h3>
+              <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={RISK_DIST_DATA} layout="vertical">
+                          <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                          <XAxis type="number" hide />
+                          <YAxis dataKey="name" type="category" width={60} tick={{fontSize: 12}} />
+                          <Tooltip cursor={{fill: 'transparent'}} />
+                          <Bar dataKey="value" barSize={20} radius={[0, 4, 4, 0]}>
+                              {RISK_DIST_DATA.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                          </Bar>
+                      </BarChart>
+                  </ResponsiveContainer>
+              </div>
+          </div>
 
-        {/* Alert Trend (Existing) */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <AlertTriangle size={18} className="text-blue-500"/> 预警趋势 (7天)
-          </h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={STAT_DATA}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={12} />
-                <YAxis axisLine={false} tickLine={false} fontSize={12} />
-                <Tooltip 
-                    contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}
-                />
-                <Bar dataKey="large" name="大额" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="suspicious" name="可疑" fill="#ef4444" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          {/* Transaction Flow */}
+          <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <ArrowRightLeft size={18} className="text-blue-500"/> 交易监测趋势 (7日)
+              </h3>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={TRX_VOLUME_DATA}>
+                      <defs>
+                          <linearGradient id="colorLarge" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                          </linearGradient>
+                          <linearGradient id="colorSuspicious" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
+                              <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                          </linearGradient>
+                      </defs>
+                      <XAxis dataKey="date" axisLine={false} tickLine={false} />
+                      <YAxis axisLine={false} tickLine={false} />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <Tooltip formatter={(value: number) => [`${value}万元`, '金额']} />
+                      <Area type="monotone" dataKey="largeValue" name="大额交易金额" stackId="1" stroke="#3b82f6" fillOpacity={1} fill="url(#colorLarge)" />
+                      <Area type="monotone" dataKey="suspicious" name="可疑交易金额" stackId="1" stroke="#ef4444" fillOpacity={1} fill="url(#colorSuspicious)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
           </div>
         </div>
-      </div>
 
-      {/* Charts Row 2: Transaction Flow */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        {/* Row 3: Module Summaries */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Screening Summary */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+             <div className="flex justify-between items-center mb-4">
+                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <ScanFace size={18} className="text-blue-500"/> 名单筛查概况
+                 </h3>
+                 <span className="text-xs bg-slate-100 px-2 py-1 rounded-full text-slate-500">监控中: {monitoredEntityCount}</span>
+             </div>
+             <div className="space-y-3">
+                 <div className="p-3 bg-red-50 rounded-lg border border-red-100 flex justify-between items-center">
+                     <span className="text-sm text-red-700 font-medium flex items-center gap-2"><AlertOctagon size={14}/> 政治公众人物 (PEP)</span>
+                     <span className="font-bold text-red-700">2 命中</span>
+                 </div>
+                 <div className="p-3 bg-amber-50 rounded-lg border border-amber-100 flex justify-between items-center">
+                     <span className="text-sm text-amber-700 font-medium flex items-center gap-2"><Globe size={14}/> 负面媒体报道</span>
+                     <span className="font-bold text-amber-700">5 命中</span>
+                 </div>
+                 <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 flex justify-between items-center">
+                     <span className="text-sm text-slate-700 font-medium flex items-center gap-2"><CheckCircle2 size={14}/> 制裁名单 (Sanctions)</span>
+                     <span className="font-bold text-green-600">0 命中</span>
+                 </div>
+             </div>
+          </div>
+
+          {/* Report Status */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+             <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <FileText size={18} className="text-blue-500"/> 监管报送状态 (今日)
+             </h3>
+             <div className="flex items-center gap-4 mb-6">
+                 <div className="flex-1 text-center p-2 border border-slate-100 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">12</div>
+                    <div className="text-xs text-slate-500">已上报</div>
+                 </div>
+                 <div className="flex-1 text-center p-2 border border-slate-100 rounded-lg">
+                    <div className="text-2xl font-bold text-emerald-600">11</div>
+                    <div className="text-xs text-slate-500">校验通过</div>
+                 </div>
+                 <div className="flex-1 text-center p-2 border border-slate-100 rounded-lg">
+                    <div className="text-2xl font-bold text-red-500">1</div>
+                    <div className="text-xs text-slate-500">校验失败</div>
+                 </div>
+             </div>
+             <div className="text-xs text-slate-400 flex items-center gap-1">
+                 <Clock size={12} /> 最近同步: 10:35:00 (系统自动)
+             </div>
+          </div>
+
+          {/* Alert Trend (Mini) */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
             <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <ArrowRightLeft size={18} className="text-blue-500"/> 交易资金流向分析 (近7日)
+                <AlertTriangle size={18} className="text-blue-500"/> 近7日预警量
             </h3>
-            <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={TRX_VOLUME_DATA}>
-                        <defs>
-                            <linearGradient id="colorIn" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                                <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                            </linearGradient>
-                            <linearGradient id="colorOut" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
-                                <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
-                            </linearGradient>
-                        </defs>
-                        <XAxis dataKey="date" axisLine={false} tickLine={false} />
-                        <YAxis axisLine={false} tickLine={false} />
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <Tooltip />
-                        <Area type="monotone" dataKey="inbound" name="汇入金额" stroke="#10b981" fillOpacity={1} fill="url(#colorIn)" />
-                        <Area type="monotone" dataKey="outbound" name="汇出金额" stroke="#ef4444" fillOpacity={1} fill="url(#colorOut)" />
-                    </AreaChart>
-                </ResponsiveContainer>
+            <div className="h-40">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={STAT_DATA}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={10} />
+                  <Tooltip />
+                  <Bar dataKey="large" stackId="a" fill="#3b82f6" />
+                  <Bar dataKey="suspicious" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
+          </div>
+
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderAlerts = () => (
     <div className="space-y-6 animate-in fade-in">
+      <div className="flex justify-between items-center">
+         <h2 className="text-lg font-bold text-slate-800">大额/可疑案例处置中心</h2>
+      </div>
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap gap-4 justify-between items-center">
         <div className="flex bg-slate-100 p-1 rounded-lg">
           <button 
@@ -320,7 +384,7 @@ function App() {
               <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500">交易主体</th>
               <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500">金额</th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500">触发规则</th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500">AI 分析状态</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500">状态</th>
               <th className="px-6 py-4 text-center text-xs font-semibold text-slate-500">操作</th>
             </tr>
           </thead>
@@ -370,7 +434,7 @@ function App() {
                            <Bot size={12} /> 已分析
                        </span>
                    ) : (
-                       <span className="text-xs text-slate-400">待分析</span>
+                       <span className="text-xs text-slate-400">待处理</span>
                    )}
                 </td>
                 <td className="px-6 py-4 text-center">
@@ -379,8 +443,12 @@ function App() {
                     className={`text-sm font-medium hover:underline flex items-center justify-center gap-1 w-full ${tx.status === ReportStatus.PENDING_REVIEW ? 'text-indigo-600 hover:text-indigo-800' : 'text-slate-600 hover:text-slate-800'}`}
                   >
                     {tx.status === ReportStatus.PENDING_REVIEW ? (
-                        <><Bot size={14}/> AI智能分析</>
-                    ) : '查看'}
+                        tx.type === TransactionType.LARGE_VALUE ? (
+                            <><FileCheck size={14}/> 复核上报</>
+                        ) : (
+                            <><Bot size={14}/> AI智能分析</>
+                        )
+                    ) : '查看详情'}
                   </button>
                 </td>
               </tr>
@@ -749,25 +817,30 @@ function App() {
                 <tbody className="divide-y divide-slate-100">
                     {reports.map(report => (
                         <tr key={report.id} className="hover:bg-slate-50">
-                            <td className="px-6 py-3 font-mono text-blue-600">{report.fileName}</td>
+                            <td className="px-6 py-3 font-mono text-slate-700">{report.fileName}</td>
                             <td className="px-6 py-3 text-slate-500">{report.reportDate}</td>
-                            <td className="px-6 py-3">{report.type}</td>
-                            <td className="px-6 py-3">{report.transactionCount}</td>
                             <td className="px-6 py-3">
-                                <span className={`px-2 py-0.5 rounded text-xs ${
-                                    report.status === '校验通过' ? 'text-emerald-600 bg-emerald-50' :
-                                    report.status === '校验失败' ? 'text-red-600 bg-red-50' : 
-                                    'text-blue-600 bg-blue-50'
+                                <span className={`px-2 py-1 rounded text-xs font-medium ${report.type === '可疑交易报告' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}>
+                                    {report.type}
+                                </span>
+                            </td>
+                            <td className="px-6 py-3 text-slate-700">{report.transactionCount}</td>
+                            <td className="px-6 py-3">
+                                <span className={`flex items-center gap-1 text-xs font-medium ${
+                                    report.status === '校验通过' ? 'text-emerald-600' :
+                                    report.status === '校验失败' ? 'text-red-600' : 'text-blue-600'
                                 }`}>
+                                    {report.status === '校验通过' && <CheckCircle2 size={14} />}
+                                    {report.status === '校验失败' && <AlertTriangle size={14} />}
                                     {report.status}
                                 </span>
                             </td>
                             <td className="px-6 py-3">
                                 <button 
                                     onClick={() => setSelectedReport(report)}
-                                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                                    className="text-blue-600 hover:underline"
                                 >
-                                    查看回执
+                                    查看详情
                                 </button>
                             </td>
                         </tr>
@@ -780,158 +853,186 @@ function App() {
 
   const renderSystem = () => (
       <div className="space-y-6 animate-in fade-in">
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-              <button 
-                onClick={() => setSystemTab('users')}
-                className={`px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 ${systemTab === 'users' ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50'}`}
-              >
-                  <User size={16} /> 用户权限管理
-              </button>
-              <button 
-                onClick={() => setSystemTab('logs')}
-                className={`px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 ${systemTab === 'logs' ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50'}`}
-              >
-                  <ListTodo size={16} /> 系统审计日志
-              </button>
-          </div>
+        <div className="flex justify-between items-center">
+             <div>
+                 <h2 className="text-2xl font-bold text-slate-800">系统管理</h2>
+                 <p className="text-sm text-slate-500">用户权限、日志审计与系统参数配置</p>
+             </div>
+             <button 
+                onClick={() => { setEditingUser(null); setIsCreatingUser(true); }}
+                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all"
+             >
+                 <Plus size={18} /> 新增用户
+             </button>
+        </div>
+        
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                    <Users size={18} className="text-blue-600" /> 用户管理
+                </h3>
+            </div>
+            <table className="w-full text-sm text-left">
+                <thead className="bg-slate-50 text-slate-500">
+                    <tr>
+                        <th className="px-6 py-3">用户名</th>
+                        <th className="px-6 py-3">角色</th>
+                        <th className="px-6 py-3">部门</th>
+                        <th className="px-6 py-3">最近登录</th>
+                        <th className="px-6 py-3">状态</th>
+                        <th className="px-6 py-3">操作</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                    {users.map(user => (
+                        <tr key={user.id} className="hover:bg-slate-50">
+                            <td className="px-6 py-3 font-bold text-slate-700">{user.username}</td>
+                            <td className="px-6 py-3">
+                                <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-medium border border-slate-200">
+                                    {user.role}
+                                </span>
+                            </td>
+                            <td className="px-6 py-3 text-slate-600">{user.department}</td>
+                            <td className="px-6 py-3 text-slate-500 font-mono text-xs">{user.lastLogin}</td>
+                            <td className="px-6 py-3">
+                                <span className={`flex items-center gap-1.5 text-xs font-medium ${user.status === '启用' ? 'text-green-600' : 'text-slate-400'}`}>
+                                    <div className={`w-2 h-2 rounded-full ${user.status === '启用' ? 'bg-green-500' : 'bg-slate-300'}`}></div>
+                                    {user.status}
+                                </span>
+                            </td>
+                            <td className="px-6 py-3 flex gap-3">
+                                <button 
+                                    onClick={() => { setEditingUser(user); setIsCreatingUser(false); }}
+                                    className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                >
+                                    <Edit size={14} /> 编辑
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
 
-          {systemTab === 'users' && (
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                      <h3 className="font-bold text-slate-800">系统用户列表</h3>
-                      <button 
-                        onClick={() => { setEditingUser(null); setIsCreatingUser(true); }}
-                        className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 transition-colors flex items-center gap-1"
-                      >
-                          <Plus size={14} /> 添加用户
-                      </button>
-                  </div>
-                  <table className="w-full text-sm text-left">
-                      <thead className="bg-slate-50 text-slate-500">
-                          <tr>
-                              <th className="px-6 py-3">用户名</th>
-                              <th className="px-6 py-3">角色</th>
-                              <th className="px-6 py-3">部门</th>
-                              <th className="px-6 py-3">最后登录</th>
-                              <th className="px-6 py-3">状态</th>
-                              <th className="px-6 py-3">权限集</th>
-                              <th className="px-6 py-3">操作</th>
-                          </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                          {users.map(u => (
-                              <tr key={u.id} className="hover:bg-slate-50">
-                                  <td className="px-6 py-3 font-medium text-slate-800">{u.username}</td>
-                                  <td className="px-6 py-3">
-                                      <span className={`px-2 py-1 rounded text-xs border ${u.role === '管理员' ? 'bg-purple-50 text-purple-700 border-purple-100' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
-                                          {u.role}
-                                      </span>
-                                  </td>
-                                  <td className="px-6 py-3 text-slate-600">{u.department}</td>
-                                  <td className="px-6 py-3 text-slate-500">{u.lastLogin}</td>
-                                  <td className="px-6 py-3">
-                                      <span className={`${u.status === '启用' ? 'text-emerald-600' : 'text-slate-400'} flex items-center gap-1 text-xs font-bold`}>
-                                          <CheckCircle2 size={12} /> {u.status}
-                                      </span>
-                                  </td>
-                                  <td className="px-6 py-3 text-xs text-slate-400 max-w-[150px] truncate" title={u.permissions?.join(', ')}>{u.permissions?.join(', ')}</td>
-                                  <td className="px-6 py-3">
-                                      <button 
-                                        onClick={() => { setEditingUser(u); setIsCreatingUser(false); }}
-                                        className="text-blue-600 hover:underline mr-3"
-                                      >
-                                          编辑
-                                      </button>
-                                      <button className="text-slate-400 hover:text-red-600">重置密码</button>
-                                  </td>
-                              </tr>
-                          ))}
-                      </tbody>
-                  </table>
-              </div>
-          )}
-
-          {systemTab === 'logs' && (
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                      <h3 className="font-bold text-slate-800">关键操作日志 (最近50条)</h3>
-                  </div>
-                  <table className="w-full text-sm text-left">
-                      <thead className="bg-slate-50 text-slate-500">
-                          <tr>
-                              <th className="px-6 py-3">时间</th>
-                              <th className="px-6 py-3">操作人</th>
-                              <th className="px-6 py-3">模块</th>
-                              <th className="px-6 py-3">动作</th>
-                              <th className="px-6 py-3">详情</th>
-                              <th className="px-6 py-3">IP地址</th>
-                          </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                          {MOCK_SYSTEM_LOGS.map(log => (
-                            <tr key={log.id} className="hover:bg-slate-50">
-                                <td className="px-6 py-3 text-slate-500 font-mono text-xs">{log.timestamp}</td>
-                                <td className="px-6 py-3 font-medium text-slate-700">{log.operator}</td>
-                                <td className="px-6 py-3 text-slate-600">{log.module}</td>
-                                <td className="px-6 py-3">
-                                    <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs border border-slate-200">{log.action}</span>
-                                </td>
-                                <td className="px-6 py-3 text-slate-600">{log.details}</td>
-                                <td className="px-6 py-3 text-slate-400 font-mono text-xs">{log.ip}</td>
-                            </tr>
-                          ))}
-                      </tbody>
-                  </table>
-              </div>
-          )}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                    <Settings size={18} className="text-slate-600" /> 系统审计日志 (最近10条)
+                </h3>
+            </div>
+            <table className="w-full text-sm text-left">
+                <thead className="bg-slate-50 text-slate-500">
+                    <tr>
+                        <th className="px-6 py-3">时间</th>
+                        <th className="px-6 py-3">操作员</th>
+                        <th className="px-6 py-3">模块</th>
+                        <th className="px-6 py-3">动作</th>
+                        <th className="px-6 py-3">详情</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                    {MOCK_SYSTEM_LOGS.map(log => (
+                        <tr key={log.id} className="hover:bg-slate-50">
+                            <td className="px-6 py-3 font-mono text-xs text-slate-500">{log.timestamp}</td>
+                            <td className="px-6 py-3 font-medium text-slate-700">{log.operator}</td>
+                            <td className="px-6 py-3 text-slate-600">{log.module}</td>
+                            <td className="px-6 py-3 text-slate-600">{log.action}</td>
+                            <td className="px-6 py-3 text-slate-500 max-w-xs truncate" title={log.details}>{log.details}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
       </div>
   );
 
   return (
-    <div className="flex bg-slate-50 min-h-screen font-sans text-slate-900">
+    <div className="flex min-h-screen bg-slate-100 text-slate-900 font-sans">
       <Sidebar activeView={activeView} setActiveView={setActiveView} />
       
-      <main className="flex-1 ml-64 p-8 overflow-y-auto">
-        <header className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">
-              {activeView === 'dashboard' && '首页概览'}
-              {activeView === 'alerts' && '预警处理'}
-              {activeView === 'data-query' && '数据查询'}
-              {activeView === 'models' && '监测模型配置'}
-              {activeView === 'risk-rating' && '风险评级管理'}
-              {activeView === 'reports' && '监管报送'}
-              {activeView === 'system' && '系统管理'}
-            </h1>
-            <p className="text-sm text-slate-500 mt-1">欢迎回来, admin (科技部)</p>
-          </div>
-          <div className="flex items-center gap-4">
-             <div className="px-3 py-1 bg-white border border-slate-200 rounded-full text-xs font-mono text-slate-500">
-                系统时间: 2023-10-25 10:30:00
-             </div>
-             <button className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 shadow-lg shadow-blue-200">
-                <User size={20} />
-             </button>
-          </div>
-        </header>
+      <div className="flex-1 ml-64 p-8">
+        <div className="w-full">
+            {/* Header */}
+            <header className="flex justify-between items-center mb-8">
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                        {activeView === 'dashboard' && '运营概览 (Dashboard)'}
+                        {activeView === 'alerts' && '案例处置中心 (Case Management)'}
+                        {activeView === 'models' && '监测模型管理 (Model Management)'}
+                        {activeView === 'risk-rating' && '客户风险评级 (Risk Rating)'}
+                        {activeView === 'reports' && '监管报送 (Regulatory Reporting)'}
+                        {activeView === 'data-query' && '综合数据查询 (Data Query)'}
+                        {activeView === 'system' && '系统管理 (System Admin)'}
+                        {activeView === 'inspection' && '现场检查自检 (Self-Inspection)'}
+                        {activeView === 'screening' && '智能名单筛查 (Screening)'}
+                        {activeView === 'ubo' && '受益所有人管理 (UBO)'}
+                        {activeView === 'cdd' && '客户尽职调查 (CDD)'}
+                    </h1>
+                    <p className="text-slate-500 text-sm mt-1">
+                        {new Date().toLocaleDateString('zh-CN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    </p>
+                </div>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full shadow-sm border border-slate-200">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                        <span className="text-xs font-medium text-slate-600">AI 引擎在线</span>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold shadow-lg shadow-blue-200">
+                        Ad
+                    </div>
+                </div>
+            </header>
 
-        {activeView === 'dashboard' && renderDashboard()}
-        {activeView === 'alerts' && renderAlerts()}
-        {activeView === 'models' && renderModels()}
-        {activeView === 'risk-rating' && renderRiskManagement()} 
-        {activeView === 'data-query' && renderDataQuery()}
-        {activeView === 'reports' && renderReports()}
-        {activeView === 'system' && renderSystem()}
-      </main>
+            {/* Dynamic Content */}
+            <main>
+                {activeView === 'dashboard' && renderDashboard()}
+                {activeView === 'alerts' && renderAlerts()}
+                {activeView === 'models' && renderModels()}
+                {activeView === 'risk-rating' && renderRiskManagement()}
+                {activeView === 'reports' && renderReports()}
+                {activeView === 'data-query' && renderDataQuery()}
+                {activeView === 'system' && renderSystem()}
+                {activeView === 'inspection' && <SelfInspectionModule />}
+                {activeView === 'screening' && <ScreeningModule />}
+                {activeView === 'ubo' && <BeneficialOwnerModule />}
+                {activeView === 'cdd' && <CddModule />}
+            </main>
+        </div>
+      </div>
 
-      {/* Modals */}
+      {/* Global Modals */}
       {selectedTransaction && (
         <AnalysisPanel 
-          transaction={selectedTransaction} 
-          onClose={() => setSelectedTransaction(null)}
-          onUpdateStatus={handleStatusUpdate}
-          onFeedback={handleAiFeedback}
+            transaction={selectedTransaction} 
+            onClose={() => setSelectedTransaction(null)}
+            onUpdateStatus={handleStatusUpdate}
+            onFeedback={handleAiFeedback}
         />
+      )}
+
+      {viewingTransaction && (
+          <TransactionDetailModal 
+              transaction={viewingTransaction} 
+              onClose={() => setViewingTransaction(null)}
+              onViewCustomer={handleJumpToCustomer}
+          />
+      )}
+
+      {(editingModel || isCreatingModel) && (
+        <ModelConfigModal 
+          model={editingModel} 
+          onClose={() => { setEditingModel(null); setIsCreatingModel(false); }} 
+          onSave={handleSaveModel} 
+        />
+      )}
+
+      {(editingUser || isCreatingUser) && (
+          <UserEditModal 
+            user={editingUser}
+            isCreating={isCreatingUser}
+            onClose={() => { setEditingUser(null); setIsCreatingUser(false); }}
+            onSave={handleSaveUser}
+          />
       )}
 
       {selectedCustomer && (
@@ -939,22 +1040,6 @@ function App() {
             customer={selectedCustomer}
             onClose={() => setSelectedCustomer(null)}
         />
-      )}
-
-      {viewingTransaction && (
-        <TransactionDetailModal 
-            transaction={viewingTransaction}
-            onClose={() => setViewingTransaction(null)}
-            onViewCustomer={handleJumpToCustomer}
-        />
-      )}
-
-      {(editingModel || isCreatingModel) && (
-          <ModelConfigModal 
-            model={editingModel}
-            onClose={() => { setEditingModel(null); setIsCreatingModel(false); }}
-            onSave={handleSaveModel}
-          />
       )}
 
       {editingRiskModel && (
@@ -966,20 +1051,12 @@ function App() {
       )}
 
       {selectedReport && (
-        <ReportDetailModal 
-          report={selectedReport}
-          onClose={() => setSelectedReport(null)}
-        />
+          <ReportDetailModal 
+            report={selectedReport}
+            onClose={() => setSelectedReport(null)}
+          />
       )}
 
-      {(editingUser || isCreatingUser) && (
-        <UserEditModal 
-          user={editingUser}
-          isCreating={isCreatingUser}
-          onClose={() => { setEditingUser(null); setIsCreatingUser(false); }}
-          onSave={handleSaveUser}
-        />
-      )}
     </div>
   );
 }

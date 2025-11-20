@@ -26,6 +26,12 @@ export interface BeneficialOwner {
   ratio: number;
   role: string;
   country: string;
+  // 新增字段
+  status: '已核实' | '待核实' | '异常' | '无需核实';
+  verificationDate?: string;
+  idType?: string;
+  idNumber?: string;
+  expiryDate?: string;
 }
 
 export interface NegativeNews {
@@ -170,4 +176,128 @@ export interface RegulatoryReport {
   feedbackFileName?: string;
   feedbackContent?: string; // XML string
   feedbackTime?: string;
+}
+
+// --- 自检模块新增类型 ---
+
+export enum InspectionStatus {
+    COMPLIANT = '达标',
+    PARTIAL = '部分达标',
+    NON_COMPLIANT = '未达标',
+    NOT_APPLICABLE = '不适用'
+}
+
+export type InspectionCategory = '内控制度' | '客户身份识别(KYC)' | '大额可疑报送' | '资料保存' | '员工培训' | '反洗钱保密';
+
+export interface InspectionItem {
+    id: string;
+    category: InspectionCategory;
+    requirement: string; // 监管要求
+    auditPoint: string; // 检查要点
+    status: InspectionStatus;
+    remark?: string; // 整改措施或备注
+    lastChecked?: string;
+}
+
+// --- 现场检查数据接口 (300号文) ---
+
+export interface StandardReportTable {
+    id: string;
+    tableName: string; // e.g., "个人客户信息表"
+    tableCode: string; // e.g., "GRKHXX"
+    description: string;
+    recordCount: number;
+    lastGenerated: string;
+    status: '已生成' | '未生成' | '生成中';
+}
+
+// --- 筛查模块新增类型 ---
+
+export enum ScreeningCategory {
+    PEP = '政治公众人物 (PEP)',
+    SANCTION = '制裁名单 (Sanctions)',
+    ADVERSE_MEDIA = '不良媒体 (Adverse Media)',
+    WATCHLIST = '执法/监管黑名单 (Watchlist)'
+}
+
+export interface ScreeningHit {
+    id: string;
+    category: ScreeningCategory;
+    name: string;
+    matchScore: number; // 0-100
+    sourceList: string; // e.g., "OFAC SDN", "UN Consolidated", "Dow Jones PEP"
+    details: string;
+    dateAdded: string;
+    url?: string; // External link to source
+}
+
+export interface MonitoredEntity {
+    id: string;
+    name: string;
+    type: '个人' | '企业';
+    addedDate: string;
+    lastScreened: string;
+    status: '监控中' | '已暂停';
+    riskLevel: RiskLevel;
+    hits: ScreeningHit[];
+}
+
+// --- 受益所有人(UBO) 模块新增类型 ---
+
+export interface ShareholderNode {
+    id: string;
+    name: string;
+    ratio: number; // 持股比例
+    type: '个人' | '企业';
+    children?: ShareholderNode[]; // 下一层级
+    isUBO?: boolean; // 标记是否为判定后的UBO
+    country?: string;
+}
+
+export interface CustomerStructure {
+    customerId: string;
+    rootNode: ShareholderNode;
+    updateDate: string;
+}
+
+// --- CDD (客户尽职调查) 模块新增类型 ---
+
+export enum CddStatus {
+  NEW = '新建',
+  IN_PROGRESS = '尽调中',
+  PENDING_APPROVAL = '待审批',
+  APPROVED = '通过',
+  REJECTED = '拒绝',
+  ENHANCED_DUE_DILIGENCE = '转入EDD' // Enhanced Due Diligence
+}
+
+export interface KycCheck {
+  id: string;
+  name: string; // e.g. "身份证OCR", "人脸比对", "制裁名单"
+  status: 'PASS' | 'FAIL' | 'WARN' | 'MANUAL';
+  details: string;
+  timestamp: string;
+}
+
+export interface RiskScoreComponent {
+  category: string; // e.g. "地域", "行业", "产品"
+  score: number; // 0-100
+  riskLevel: RiskLevel;
+  factor: string; // e.g. "注册地位于高风险国家"
+}
+
+export interface CddCase {
+  id: string;
+  customerId: string;
+  customerName: string;
+  type: '新户准入' | '定期复核' | '触发式调查';
+  status: CddStatus;
+  priority: '高' | '中' | '低';
+  assignee: string; // Operator
+  createDate: string;
+  dueDate: string;
+  riskScore: number; // Total score 0-100
+  riskComponents: RiskScoreComponent[];
+  kycChecks: KycCheck[];
+  comments?: string[];
 }

@@ -1,8 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
-import { X, Bot, CheckCircle, XCircle, Send, FileJson, Loader2, ThumbsUp, ThumbsDown, MessageSquare, ArrowRight, User, Building2, Sparkles, Globe, ShieldAlert } from 'lucide-react';
+import { X, Bot, CheckCircle, XCircle, Send, FileJson, Loader2, ThumbsUp, ThumbsDown, MessageSquare, ArrowRight, User, Building2, Sparkles, Globe, ShieldAlert, FileText, Info } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { Transaction, ReportStatus, AiFeedback, Customer } from '../types';
+import { Transaction, ReportStatus, AiFeedback, Customer, TransactionType } from '../types';
 import { analyzeTransaction, generateReportXml } from '../services/geminiService';
 
 interface AnalysisPanelProps {
@@ -77,15 +77,23 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ transaction, onClo
   const [feedbackComment, setFeedbackComment] = useState('');
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
 
+  const isLargeValue = transaction?.type === TransactionType.LARGE_VALUE;
+
   useEffect(() => {
     if (transaction) {
-      // Initialize or reset analysis state
-      if (transaction.status === ReportStatus.PENDING_REVIEW) {
+      // Initialize state
+      setReportPreview(null);
+
+      // Logic: 
+      // 1. If Suspicious Transaction -> Run AI Analysis
+      // 2. If Large Value -> Skip Analysis, just show details
+      
+      if (transaction.status === ReportStatus.PENDING_REVIEW && !isLargeValue) {
         setAnalysis('');
-        setReportPreview(null);
         runAnalysis(transaction);
       } else {
-        setAnalysis(transaction.aiAnalysis || "本次会话暂无历史分析记录。");
+        // Existing analysis or blank for LVT
+        setAnalysis(transaction.aiAnalysis || "");
       }
 
       // Initialize feedback state
@@ -118,7 +126,12 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ transaction, onClo
 
   const handlePrepareReport = () => {
     if (!transaction) return;
-    const xml = generateReportXml(transaction, analysis);
+    // For LVT, we use a standard template instead of AI analysis text
+    const narrative = isLargeValue 
+        ? "该交易触发大额交易监测规则，经复核要素齐全，符合《金融机构大额交易和可疑交易报告管理办法》规定，予以报送。" 
+        : analysis;
+    
+    const xml = generateReportXml(transaction, narrative);
     setReportPreview(xml);
   };
 
@@ -126,14 +139,13 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ transaction, onClo
     if (!transaction) return;
     setSubmitting(true);
     
-    // Simulate API call to Central Bank/AML Center
+    // Simulate API call
     setTimeout(() => {
       const isSuccess = Math.random() > 0.1; // 90% success rate
       setSubmitting(false);
       
       if (isSuccess) {
         onUpdateStatus(transaction.id, ReportStatus.SUBMITTED);
-        // In a real app, we would wait for async feedback. Here we simulate immediate feedback receipt after submission logic
         setTimeout(() => {
             onUpdateStatus(transaction.id, ReportStatus.ACCEPTED, "反洗钱监测中心反馈: 报文已接收。 批次号: 998877。");
         }, 2000);
@@ -146,13 +158,11 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ transaction, onClo
 
   const handleSubmitFeedback = () => {
     if (!transaction || !feedbackRating) return;
-    
     const feedbackData: AiFeedback = {
       rating: feedbackRating,
       comment: feedbackComment,
       timestamp: new Date().toISOString()
     };
-
     onFeedback(transaction.id, feedbackData);
     setFeedbackSubmitted(true);
   };
@@ -164,11 +174,13 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ transaction, onClo
       {/* Header */}
       <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
         <div>
-          <div className="flex items-center gap-2 text-indigo-600 font-semibold">
-            <Sparkles size={18} />
-            <span>AI 智能合规分析</span>
+          <div className={`flex items-center gap-2 font-semibold ${isLargeValue ? 'text-blue-600' : 'text-indigo-600'}`}>
+            {isLargeValue ? <FileText size={18} /> : <Sparkles size={18} />}
+            <span>{isLargeValue ? '大额交易上报确认' : 'AI 智能合规分析'}</span>
           </div>
-          <h2 className="text-xl font-bold text-slate-800 mt-1">交易甄别与研判</h2>
+          <h2 className="text-xl font-bold text-slate-800 mt-1">
+            {isLargeValue ? '交易复核' : '交易甄别与研判'}
+          </h2>
           <p className="text-sm text-slate-500">流水号: {transaction.id}</p>
         </div>
         <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
@@ -196,13 +208,12 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ transaction, onClo
                     </div>
                     <div className="text-right">
                         <p className="text-xs text-slate-500 mb-1">触发规则</p>
-                        <p className="text-xs font-medium text-amber-700 px-2 py-1 bg-amber-50 rounded border border-amber-100 inline-block max-w-[220px] truncate" title={transaction.triggerRule}>
+                        <p className={`text-xs font-medium px-2 py-1 rounded border inline-block max-w-[220px] truncate ${isLargeValue ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-amber-50 text-amber-700 border-amber-100'}`} title={transaction.triggerRule}>
                             {transaction.triggerRule}
                         </p>
                     </div>
                 </div>
 
-                {/* Enhanced Details Row */}
                 <div className="pt-3 border-t border-slate-200 flex gap-4">
                     <div className="flex-1">
                          <p className="text-xs text-slate-500 mb-1">交易附言</p>
@@ -225,89 +236,104 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ transaction, onClo
             </div>
         </div>
 
-        {/* AI Analysis Section */}
-        <div className="space-y-3 pt-4 border-t border-slate-100">
-          <h3 className="font-semibold text-slate-800 flex items-center gap-2">
-            <Bot size={18} className="text-indigo-600" />
-            AI 智能分析报告
-            {loading && <Loader2 className="animate-spin text-blue-500 w-4 h-4" />}
-          </h3>
-          
-          {loading ? (
-            <div className="space-y-3 animate-pulse p-4 border border-slate-100 rounded-lg">
-              <div className="h-4 bg-slate-100 rounded w-1/3"></div>
-              <div className="h-4 bg-slate-100 rounded w-full"></div>
-              <div className="h-4 bg-slate-100 rounded w-full"></div>
-              <div className="h-4 bg-slate-100 rounded w-2/3"></div>
-            </div>
-          ) : (
-            <>
-              <div className="prose prose-sm prose-indigo max-w-none bg-white p-5 border border-slate-200 rounded-xl shadow-sm">
-                <ReactMarkdown>{analysis}</ReactMarkdown>
-              </div>
-              
-              {/* Feedback Section */}
-              {analysis && !loading && (
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mt-4">
-                  <h4 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                    <MessageSquare size={14} />
-                    AI 研判准确性反馈
-                  </h4>
-                  
-                  {feedbackSubmitted ? (
-                    <div className="text-green-600 text-sm flex items-center gap-2 bg-green-50 p-2 rounded border border-green-100">
-                      <CheckCircle size={16} />
-                      感谢您的专业反馈，这将用于微调本地反洗钱模型。
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <div className="flex gap-3">
-                        <button 
-                          onClick={() => setFeedbackRating('positive')}
-                          className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${
-                            feedbackRating === 'positive' 
-                              ? 'bg-blue-100 text-blue-700 border-blue-300' 
-                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
-                          }`}
-                        >
-                          <ThumbsUp size={14} /> 准确/有帮助
-                        </button>
-                        <button 
-                          onClick={() => setFeedbackRating('negative')}
-                          className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${
-                            feedbackRating === 'negative' 
-                              ? 'bg-red-100 text-red-700 border-red-300' 
-                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
-                          }`}
-                        >
-                          <ThumbsDown size={14} /> 误报/遗漏风险
-                        </button>
-                      </div>
-                      
-                      <textarea
-                        value={feedbackComment}
-                        onChange={(e) => setFeedbackComment(e.target.value)}
-                        placeholder="请输入具体的修订意见，例如：忽略了同名账户关联..."
-                        className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                        rows={2}
-                      />
-                      
-                      <div className="flex justify-end">
-                        <button
-                          onClick={handleSubmitFeedback}
-                          disabled={!feedbackRating}
-                          className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          提交模型反馈
-                        </button>
-                      </div>
-                    </div>
-                  )}
+        {/* Analysis Section (Conditional) */}
+        {isLargeValue ? (
+             // 大额交易 - 显示信息提示而非AI分析
+             <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mt-4">
+                <h4 className="text-sm font-bold text-blue-800 mb-2 flex items-center gap-2">
+                    <Info size={16} /> 客观规则触发
+                </h4>
+                <p className="text-sm text-blue-700 leading-relaxed">
+                    该笔交易符合大额交易报告（LCTR）的客观触发标准。系统已自动校验要素完整性。
+                    <br/>
+                    <strong>无需进行AI可疑甄别，请直接确认并生成报文。</strong>
+                </p>
+             </div>
+        ) : (
+            // 可疑交易 - 显示AI分析
+            <div className="space-y-3 pt-4 border-t border-slate-100">
+            <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+                <Bot size={18} className="text-indigo-600" />
+                AI 智能分析报告
+                {loading && <Loader2 className="animate-spin text-blue-500 w-4 h-4" />}
+            </h3>
+            
+            {loading ? (
+                <div className="space-y-3 animate-pulse p-4 border border-slate-100 rounded-lg">
+                <div className="h-4 bg-slate-100 rounded w-1/3"></div>
+                <div className="h-4 bg-slate-100 rounded w-full"></div>
+                <div className="h-4 bg-slate-100 rounded w-full"></div>
+                <div className="h-4 bg-slate-100 rounded w-2/3"></div>
                 </div>
-              )}
-            </>
-          )}
-        </div>
+            ) : (
+                <>
+                <div className="prose prose-sm prose-indigo max-w-none bg-white p-5 border border-slate-200 rounded-xl shadow-sm">
+                    <ReactMarkdown>{analysis}</ReactMarkdown>
+                </div>
+                
+                {/* Feedback Section (Only for STR) */}
+                {analysis && !loading && (
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mt-4">
+                    <h4 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                        <MessageSquare size={14} />
+                        AI 研判准确性反馈
+                    </h4>
+                    
+                    {feedbackSubmitted ? (
+                        <div className="text-green-600 text-sm flex items-center gap-2 bg-green-50 p-2 rounded border border-green-100">
+                        <CheckCircle size={16} />
+                        感谢您的专业反馈，这将用于微调本地反洗钱模型。
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                        <div className="flex gap-3">
+                            <button 
+                            onClick={() => setFeedbackRating('positive')}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${
+                                feedbackRating === 'positive' 
+                                ? 'bg-blue-100 text-blue-700 border-blue-300' 
+                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                            }`}
+                            >
+                            <ThumbsUp size={14} /> 准确/有帮助
+                            </button>
+                            <button 
+                            onClick={() => setFeedbackRating('negative')}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${
+                                feedbackRating === 'negative' 
+                                ? 'bg-red-100 text-red-700 border-red-300' 
+                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                            }`}
+                            >
+                            <ThumbsDown size={14} /> 误报/遗漏风险
+                            </button>
+                        </div>
+                        
+                        <textarea
+                            value={feedbackComment}
+                            onChange={(e) => setFeedbackComment(e.target.value)}
+                            placeholder="请输入具体的修订意见，例如：忽略了同名账户关联..."
+                            className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            rows={2}
+                        />
+                        
+                        <div className="flex justify-end">
+                            <button
+                            onClick={handleSubmitFeedback}
+                            disabled={!feedbackRating}
+                            className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                            提交模型反馈
+                            </button>
+                        </div>
+                        </div>
+                    )}
+                    </div>
+                )}
+                </>
+            )}
+            </div>
+        )}
 
         {/* Report Preview */}
         {reportPreview && (
@@ -338,10 +364,10 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ transaction, onClo
             <button 
               onClick={handlePrepareReport}
               disabled={loading}
-              className="flex-1 py-3 px-4 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              className={`flex-1 py-3 px-4 font-medium rounded-lg shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 ${isLargeValue ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-200 text-white' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 text-white'}`}
             >
               <CheckCircle size={18} />
-              生成可疑报告 (STR)
+              {isLargeValue ? '生成大额报告 (LCTR)' : '生成可疑报告 (STR)'}
             </button>
           </div>
         ) : (
