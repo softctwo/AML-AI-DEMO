@@ -16,6 +16,7 @@ import { CddModule } from './components/CddModule';
 import { CopilotWidget } from './components/CopilotWidget'; // Scheme B
 import { CaseInvestigationModule } from './components/CaseInvestigationModule'; // Scheme C
 import { RiskHeatmap } from './components/RiskHeatmap'; // Phase 4
+import { SystemGuide } from './components/SystemGuide'; // System Guide Component
 import { MOCK_TRANSACTIONS, STAT_DATA, MOCK_CUSTOMERS, MOCK_ACCOUNTS, MOCK_MODELS, MOCK_RISK_MODELS, MOCK_USERS, MOCK_SYSTEM_LOGS, RISK_DIST_DATA, TRX_VOLUME_DATA, MOCK_REPORTS, MOCK_CDD_CASES, MOCK_INSPECTION_ITEMS, MOCK_MONITORED_ENTITIES, MOCK_INVESTIGATION_CASES } from './constants';
 import { Transaction, ReportStatus, TransactionType, MonitoringModel, RiskRatingModel, AiFeedback, Customer, RiskLevel, SystemUser, RegulatoryReport, InspectionStatus, CddStatus } from './types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell } from 'recharts';
@@ -948,6 +949,9 @@ function App() {
                     </p>
                 </div>
                 <div className="flex items-center gap-4">
+                    {/* System Guide Button */}
+                    <SystemGuide />
+
                     <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full shadow-sm border border-slate-200">
                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                         <span className="text-xs font-medium text-slate-600">AI 引擎在线</span>

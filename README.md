@@ -17,12 +17,12 @@
 ### 1. 🧠 AI 智能研判与助手 (AI-Driven Analysis & Copilot)
 *   **Transaction Analysis**: 集成 Google Gemini 2.5 Flash 模型，自动撰写《可疑交易甄别分析报告》。
 *   **AML Copilot (AI 合规助手)**: 全局悬浮的智能助手，随时回答法规咨询（如3号令、164号文）、起草尽调话术或解释风险模型。
-*   **STR Drafting Studio (智能撰写工坊)** `NEW`: AI 自动基于案件全貌（Context）撰写完整的《可疑交易报告》长文。
+*   **STR Drafting Studio (智能撰写工坊)**: AI 自动基于案件全貌（Context）撰写完整的《可疑交易报告》长文。
 
-### 2. 🌍 全球风险态势 (Global Risk Visualization) `NEW`
+### 2. 🌍 全球风险态势 (Global Risk Visualization)
 *   **风险热力图**: 仪表盘集成全球资金风险地图，直观展示高风险司法管辖区（如制裁国家、避税天堂）的资金流动情况。
 
-### 3. 📈 实体风险全景时间轴 (Entity Risk Timeline) `NEW`
+### 3. 📈 实体风险全景时间轴 (Entity Risk Timeline)
 *   **全生命周期**: 在客户详情页展示从开户、预警、评级变更到结案的所有风险事件时间线，辅助分析员快速回溯历史。
 
 ### 4. 🕸️ 资金穿透与链路图谱 (Transaction Link Analysis)
@@ -59,6 +59,10 @@
 ### 11. ✅ 现场检查自检 (Self-Inspection)
 *   内置合规自查清单（内控制度、KYC、资料保存等）。
 *   **300号文接口**: 模拟生成银发〔2017〕300号文要求的标准数据提取接口（XML/Excel）。
+
+### 12. 📖 系统说明书 (System Guide) `NEW`
+*   **功能入口**: 页面右上角“问号”图标。
+*   **说明**: 内置交互式系统功能文档，支持随时查阅各模块的操作指南和业务逻辑说明。
 
 ## 🛠️ 技术栈
 
@@ -111,10 +115,11 @@
 src/
 ├── components/              # 业务组件模块
 │   ├── AnalysisPanel.tsx        # AI 分析面板
-│   ├── ReportDraftingStudio.tsx # AI 撰写工坊 (NEW)
-│   ├── RiskHeatmap.tsx          # 全球风险热力图 (NEW)
+│   ├── ReportDraftingStudio.tsx # AI 撰写工坊
+│   ├── RiskHeatmap.tsx          # 全球风险热力图
 │   ├── CaseInvestigationModule.tsx # 调查案卷模块
 │   ├── CopilotWidget.tsx        # AI 合规助手悬浮窗
+│   ├── SystemGuide.tsx          # 系统说明书组件 (NEW)
 │   ├── TransactionDetailModal.tsx # 包含资金链路图谱
 │   ├── CddModule.tsx            # 尽职调查模块
 │   ├── BeneficialOwnerModule.tsx # UBO 模块

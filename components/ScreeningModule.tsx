@@ -1,6 +1,7 @@
 
+
 import React, { useState, useEffect } from 'react';
-import { Search, Loader2, ShieldAlert, User, Building2, Globe, AlertTriangle, CheckCircle2, Info, AlertOctagon, Eye, Filter, Plus, XCircle, Save } from 'lucide-react';
+import { Search, Loader2, ShieldAlert, User, Building2, Globe, AlertTriangle, CheckCircle2, Info, AlertOctagon, Eye, Filter, Plus, XCircle, Save, ListFilter } from 'lucide-react';
 import { ScreeningHit, ScreeningCategory, MonitoredEntity, RiskLevel } from '../types';
 import { MOCK_SCREENING_HITS_DB, MOCK_MONITORED_ENTITIES } from '../constants';
 
@@ -16,6 +17,7 @@ export const ScreeningModule: React.FC = () => {
   // Monitoring State
   const [monitoredEntities, setMonitoredEntities] = useState<MonitoredEntity[]>(MOCK_MONITORED_ENTITIES);
   const [monitorFilter, setMonitorFilter] = useState<'all' | 'active' | 'critical'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<ScreeningCategory | 'ALL'>('ALL'); // New Category Filter
   const [isAdding, setIsAdding] = useState(false);
 
   // New Entity Form State
@@ -70,18 +72,26 @@ export const ScreeningModule: React.FC = () => {
       return <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-bold border border-blue-200">潜在匹配 ({score}%)</span>;
   };
 
-  const getCategoryIcon = (cat: ScreeningCategory) => {
+  const getCategoryIcon = (cat: ScreeningCategory, size: number = 18) => {
       switch (cat) {
-          case ScreeningCategory.SANCTION: return <AlertOctagon className="text-red-600" size={18} />;
-          case ScreeningCategory.PEP: return <User className="text-blue-600" size={18} />;
-          case ScreeningCategory.ADVERSE_MEDIA: return <Globe className="text-amber-600" size={18} />;
-          case ScreeningCategory.WATCHLIST: return <Eye className="text-slate-600" size={18} />;
+          case ScreeningCategory.SANCTION: return <AlertOctagon className="text-red-600" size={size} />;
+          case ScreeningCategory.PEP: return <User className="text-blue-600" size={size} />;
+          case ScreeningCategory.ADVERSE_MEDIA: return <Globe className="text-amber-600" size={size} />;
+          case ScreeningCategory.WATCHLIST: return <Eye className="text-slate-600" size={size} />;
       }
   };
 
   const filteredMonitoring = monitoredEntities.filter(entity => {
-      if (monitorFilter === 'active') return entity.status === '监控中';
-      if (monitorFilter === 'critical') return entity.riskLevel === RiskLevel.CRITICAL || entity.riskLevel === RiskLevel.HIGH;
+      // Filter by Status/Risk Level
+      if (monitorFilter === 'active' && entity.status !== '监控中') return false;
+      if (monitorFilter === 'critical' && (entity.riskLevel !== RiskLevel.CRITICAL && entity.riskLevel !== RiskLevel.HIGH)) return false;
+      
+      // Filter by Hit Category
+      if (categoryFilter !== 'ALL') {
+          const hasCategoryHit = entity.hits.some(hit => hit.category === categoryFilter);
+          if (!hasCategoryHit) return false;
+      }
+      
       return true;
   });
 
@@ -360,7 +370,9 @@ export const ScreeningModule: React.FC = () => {
                     </div>
                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                         <p className="text-slate-500 text-sm font-medium">今日新增预警</p>
-                        <h3 className="text-3xl font-bold text-red-600 mt-2">0</h3>
+                        <h3 className="text-3xl font-bold text-red-600 mt-2">
+                             {monitoredEntities.filter(e => e.hits.some(h => h.dateAdded === new Date().toISOString().split('T')[0])).length}
+                        </h3>
                     </div>
                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                         <p className="text-slate-500 text-sm font-medium">上次全量扫描</p>
@@ -376,32 +388,74 @@ export const ScreeningModule: React.FC = () => {
                     </div>
                 </div>
 
+                {/* Filter Bar */}
+                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap gap-4 justify-between items-center">
+                     <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                        <span className="text-xs font-bold text-slate-500 uppercase mr-2">基础筛选:</span>
+                        <button 
+                            onClick={() => setMonitorFilter('all')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${monitorFilter === 'all' ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                        >
+                            全部
+                        </button>
+                        <button 
+                            onClick={() => setMonitorFilter('active')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${monitorFilter === 'active' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                        >
+                            仅监控中
+                        </button>
+                        <button 
+                            onClick={() => setMonitorFilter('critical')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${monitorFilter === 'critical' ? 'bg-red-600 text-white border-red-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                        >
+                            高风险实体
+                        </button>
+                     </div>
+                     
+                     <div className="w-px h-6 bg-slate-200 hidden md:block"></div>
+
+                     <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                        <span className="text-xs font-bold text-slate-500 uppercase mr-2">命中类型:</span>
+                        <button 
+                            onClick={() => setCategoryFilter('ALL')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${categoryFilter === 'ALL' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
+                        >
+                            不限
+                        </button>
+                        <button 
+                            onClick={() => setCategoryFilter(ScreeningCategory.SANCTION)}
+                            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${categoryFilter === ScreeningCategory.SANCTION ? 'bg-red-50 text-red-700 border-red-200' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
+                        >
+                            <AlertOctagon size={12} /> 制裁名单
+                        </button>
+                        <button 
+                            onClick={() => setCategoryFilter(ScreeningCategory.PEP)}
+                            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${categoryFilter === ScreeningCategory.PEP ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
+                        >
+                            <User size={12} /> PEPs
+                        </button>
+                        <button 
+                            onClick={() => setCategoryFilter(ScreeningCategory.ADVERSE_MEDIA)}
+                            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${categoryFilter === ScreeningCategory.ADVERSE_MEDIA ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
+                        >
+                            <Globe size={12} /> 负面媒体
+                        </button>
+                        <button 
+                            onClick={() => setCategoryFilter(ScreeningCategory.WATCHLIST)}
+                            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${categoryFilter === ScreeningCategory.WATCHLIST ? 'bg-slate-100 text-slate-700 border-slate-300' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
+                        >
+                            <Eye size={12} /> 观察名单
+                        </button>
+                     </div>
+                </div>
+
                 {/* Entity List */}
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                         <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                            <Eye size={18} className="text-blue-600" /> 监控名单管理
+                            <ListFilter size={18} className="text-blue-600" /> 监控名单详情
                         </h3>
-                        <div className="flex gap-2">
-                            <button 
-                                onClick={() => setMonitorFilter('all')}
-                                className={`px-3 py-1 rounded text-xs font-medium border ${monitorFilter === 'all' ? 'bg-white text-blue-600 border-blue-200 shadow-sm' : 'bg-transparent text-slate-500 border-transparent hover:bg-slate-100'}`}
-                            >
-                                全部
-                            </button>
-                            <button 
-                                onClick={() => setMonitorFilter('active')}
-                                className={`px-3 py-1 rounded text-xs font-medium border ${monitorFilter === 'active' ? 'bg-white text-green-600 border-green-200 shadow-sm' : 'bg-transparent text-slate-500 border-transparent hover:bg-slate-100'}`}
-                            >
-                                仅监控中
-                            </button>
-                            <button 
-                                onClick={() => setMonitorFilter('critical')}
-                                className={`px-3 py-1 rounded text-xs font-medium border ${monitorFilter === 'critical' ? 'bg-white text-red-600 border-red-200 shadow-sm' : 'bg-transparent text-slate-500 border-transparent hover:bg-slate-100'}`}
-                            >
-                                高风险实体
-                            </button>
-                        </div>
+                        <span className="text-xs text-slate-500">共 {filteredMonitoring.length} 条记录</span>
                     </div>
                     
                     <table className="w-full text-sm text-left">
@@ -409,8 +463,8 @@ export const ScreeningModule: React.FC = () => {
                             <tr>
                                 <th className="px-6 py-4">实体名称</th>
                                 <th className="px-6 py-4">类型</th>
-                                <th className="px-6 py-4">加入日期</th>
                                 <th className="px-6 py-4">风险等级</th>
+                                <th className="px-6 py-4">命中详情 (Hits)</th>
                                 <th className="px-6 py-4">监控状态</th>
                                 <th className="px-6 py-4">操作</th>
                             </tr>
@@ -423,7 +477,6 @@ export const ScreeningModule: React.FC = () => {
                                         {entity.name}
                                     </td>
                                     <td className="px-6 py-4 text-slate-500">{entity.type}</td>
-                                    <td className="px-6 py-4 text-slate-500">{entity.addedDate}</td>
                                     <td className="px-6 py-4">
                                         <span className={`px-2 py-1 rounded text-xs font-bold ${
                                             entity.riskLevel === RiskLevel.CRITICAL ? 'bg-red-100 text-red-700' : 
@@ -433,6 +486,29 @@ export const ScreeningModule: React.FC = () => {
                                         }`}>
                                             {entity.riskLevel}
                                         </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        {entity.hits.length > 0 ? (
+                                            <div className="flex flex-wrap gap-2">
+                                                {/* Deduplicate categories for badges */}
+                                                {Array.from(new Set(entity.hits.map(h => h.category))).map(cat => (
+                                                    <span key={cat} className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border font-medium ${
+                                                        cat === ScreeningCategory.SANCTION ? 'bg-red-50 text-red-700 border-red-100' :
+                                                        cat === ScreeningCategory.PEP ? 'bg-blue-50 text-blue-700 border-blue-100' :
+                                                        cat === ScreeningCategory.ADVERSE_MEDIA ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                                                        'bg-slate-50 text-slate-600 border-slate-200'
+                                                    }`}>
+                                                        {cat === ScreeningCategory.SANCTION && <AlertOctagon size={10} />}
+                                                        {cat === ScreeningCategory.PEP && <User size={10} />}
+                                                        {cat === ScreeningCategory.ADVERSE_MEDIA && <Globe size={10} />}
+                                                        {cat === ScreeningCategory.WATCHLIST && <Eye size={10} />}
+                                                        {cat}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <span className="text-xs text-slate-400 italic">无命中记录</span>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`flex items-center gap-1.5 text-xs font-medium ${entity.status === '监控中' ? 'text-green-600' : 'text-slate-400'}`}>
@@ -449,6 +525,13 @@ export const ScreeningModule: React.FC = () => {
                                     </td>
                                 </tr>
                             ))}
+                            {filteredMonitoring.length === 0 && (
+                                <tr>
+                                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
+                                        未找到符合筛选条件的监控实体。
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>

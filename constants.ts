@@ -1,4 +1,5 @@
 
+
 import { Transaction, TransactionType, ReportStatus, RiskLevel, Customer, Account, MonitoringModel, RiskRatingModel, SystemUser, SystemLog, RegulatoryReport, InspectionItem, InspectionStatus, MonitoredEntity, ScreeningHit, ScreeningCategory, StandardReportTable, CustomerStructure, CddCase, CddStatus, InvestigationCase, CaseStatus, GraphNode, GraphLink } from './types';
 
 // 模拟客户数据 (增强版 - 包含UBO状态)
@@ -424,9 +425,91 @@ export const MOCK_SCREENING_HITS_DB: { [key: string]: ScreeningHit[] } = {
 };
 
 export const MOCK_MONITORED_ENTITIES: MonitoredEntity[] = [
-    { id: 'ENT-001', name: 'Iran Shipping Lines', type: '企业', addedDate: '2022-01-15', lastScreened: '2023-10-25', status: '监控中', riskLevel: RiskLevel.CRITICAL, hits: [] },
-    { id: 'ENT-002', name: '张三', type: '个人', addedDate: '2023-05-20', lastScreened: '2023-10-25', status: '监控中', riskLevel: RiskLevel.LOW, hits: [] },
-    { id: 'ENT-003', name: 'North Korea Trading Co', type: '企业', addedDate: '2023-09-01', lastScreened: '2023-10-25', status: '监控中', riskLevel: RiskLevel.CRITICAL, hits: [] },
+    { 
+        id: 'ENT-001', 
+        name: 'Iran Shipping Lines', 
+        type: '企业', 
+        addedDate: '2022-01-15', 
+        lastScreened: '2023-10-25', 
+        status: '监控中', 
+        riskLevel: RiskLevel.CRITICAL, 
+        hits: [
+            { id: 'HIT-901', category: ScreeningCategory.SANCTION, name: 'IRISL', matchScore: 100, sourceList: 'OFAC SDN', details: 'Sanctioned Entity', dateAdded: '2022-01-15' }
+        ] 
+    },
+    { 
+        id: 'ENT-002', 
+        name: '张三', 
+        type: '个人', 
+        addedDate: '2023-05-20', 
+        lastScreened: '2023-10-25', 
+        status: '监控中', 
+        riskLevel: RiskLevel.LOW, 
+        hits: [] 
+    },
+    { 
+        id: 'ENT-003', 
+        name: 'North Korea Trading Co', 
+        type: '企业', 
+        addedDate: '2023-09-01', 
+        lastScreened: '2023-10-25', 
+        status: '监控中', 
+        riskLevel: RiskLevel.CRITICAL, 
+        hits: [
+            { id: 'HIT-902', category: ScreeningCategory.SANCTION, name: 'DPRK Trade', matchScore: 95, sourceList: 'UN Sanctions', details: 'Prohibited Trade', dateAdded: '2023-09-01' },
+            { id: 'HIT-902b', category: ScreeningCategory.WATCHLIST, name: 'DPRK Trade', matchScore: 100, sourceList: 'Regional Watchlist', details: 'High Risk Trade', dateAdded: '2023-09-01' }
+        ] 
+    },
+    { 
+        id: 'ENT-004', 
+        name: 'Senator John Smith', 
+        type: '个人', 
+        addedDate: '2023-06-15', 
+        lastScreened: '2023-10-25', 
+        status: '监控中', 
+        riskLevel: RiskLevel.MEDIUM, 
+        hits: [
+            { id: 'HIT-903', category: ScreeningCategory.PEP, name: 'John Smith', matchScore: 100, sourceList: 'Domestic PEP', details: 'Member of Parliament', dateAdded: '2023-06-15' }
+        ] 
+    },
+    { 
+        id: 'ENT-005', 
+        name: 'Scam Crypto Exchange', 
+        type: '企业', 
+        addedDate: '2023-10-01', 
+        lastScreened: '2023-10-25', 
+        status: '已暂停', 
+        riskLevel: RiskLevel.HIGH, 
+        hits: [
+            { id: 'HIT-904', category: ScreeningCategory.ADVERSE_MEDIA, name: 'Scam Exchange', matchScore: 90, sourceList: 'Global News', details: 'Fraud allegations', dateAdded: '2023-10-01' },
+            { id: 'HIT-905', category: ScreeningCategory.WATCHLIST, name: 'Scam Exchange', matchScore: 100, sourceList: 'Local Regulator Warning', details: 'Unlicensed Operation', dateAdded: '2023-10-05' }
+        ] 
+    },
+    { 
+        id: 'ENT-006', 
+        name: 'Global Tech Import', 
+        type: '企业', 
+        addedDate: '2023-10-20', 
+        lastScreened: '2023-10-25', 
+        status: '监控中', 
+        riskLevel: RiskLevel.HIGH, 
+        hits: [
+            { id: 'HIT-906', category: ScreeningCategory.WATCHLIST, name: 'Tech Import LLC', matchScore: 88, sourceList: 'Trade Compliance List', details: 'Export control restriction warning', dateAdded: '2023-10-22' }
+        ] 
+    },
+    { 
+        id: 'ENT-007', 
+        name: 'Corrupt Official A', 
+        type: '个人', 
+        addedDate: '2023-02-10', 
+        lastScreened: '2023-10-25', 
+        status: '监控中', 
+        riskLevel: RiskLevel.CRITICAL, 
+        hits: [
+            { id: 'HIT-907', category: ScreeningCategory.PEP, name: 'Official A', matchScore: 100, sourceList: 'Foreign PEP', details: 'Minister of Finance', dateAdded: '2023-02-10' },
+            { id: 'HIT-908', category: ScreeningCategory.ADVERSE_MEDIA, name: 'Official A', matchScore: 95, sourceList: 'News', details: 'Bribery scandal investigation', dateAdded: '2023-08-15' }
+        ] 
+    },
 ];
 
 // 模拟股权结构树
