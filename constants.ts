@@ -1,7 +1,17 @@
 
 
 
+
+
 import { Transaction, TransactionType, ReportStatus, RiskLevel, Customer, Account, MonitoringModel, RiskRatingModel, SystemUser, SystemLog, RegulatoryReport, InspectionItem, InspectionStatus, MonitoredEntity, ScreeningHit, ScreeningCategory, StandardReportTable, CustomerStructure, CddCase, CddStatus, InvestigationCase, CaseStatus, GraphNode, GraphLink } from './types';
+
+// --- NEW: Regulatory News Mock Data ---
+export const MOCK_REGULATORY_NEWS = [
+    { id: 'NEWS-001', date: '2023-10-25', source: '中国人民银行', title: '关于加强商业银行反洗钱领域数据安全管理的通知', type: '通知' },
+    { id: 'NEWS-002', date: '2023-10-24', source: '国家金融监督管理总局', title: '2023年第四季度银行业保险业反洗钱现场检查重点提示', type: '风险提示' },
+    { id: 'NEWS-003', date: '2023-10-22', source: '反洗钱监测中心', title: '关于优化大额交易报告接口(v2.1)的测试公告', type: '技术公告' },
+    { id: 'NEWS-004', date: '2023-10-20', source: 'FATF', title: '金融行动特别工作组更新高风险国家名单', type: '国际合规' }
+];
 
 // 模拟客户数据 (增强版 - 包含UBO状态)
 export const MOCK_CUSTOMERS: Customer[] = [
@@ -745,4 +755,8 @@ export const GEO_RISK_DATA = [
     { id: 'VG', name: 'British Virgin Islands', risk: 85, value: 250 },
     { id: 'SG', name: 'Singapore', risk: 15, value: 800 },
     { id: 'PH', name: 'Philippines', risk: 70, value: 400 }, // Gambling risk
+    { id: 'JP', name: 'Japan', risk: 10, value: 200 },
+    { id: 'GB', name: 'United Kingdom', risk: 15, value: 350 },
+    { id: 'DE', name: 'Germany', risk: 12, value: 400 },
+    { id: 'AU', name: 'Australia', risk: 10, value: 150 },
 ];

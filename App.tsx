@@ -1,6 +1,8 @@
 
 
 
+
+
 import React, { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { StatCard } from './components/StatCard';
@@ -19,10 +21,10 @@ import { CopilotWidget } from './components/CopilotWidget'; // Scheme B
 import { CaseInvestigationModule } from './components/CaseInvestigationModule'; // Scheme C
 import { RiskHeatmap } from './components/RiskHeatmap'; // Phase 4
 import { SystemGuide } from './components/SystemGuide'; // System Guide Component
-import { MOCK_TRANSACTIONS, STAT_DATA, MOCK_CUSTOMERS, MOCK_ACCOUNTS, MOCK_MODELS, MOCK_RISK_MODELS, MOCK_USERS, MOCK_SYSTEM_LOGS, RISK_DIST_DATA, TRX_VOLUME_DATA, MOCK_REPORTS, MOCK_CDD_CASES, MOCK_INSPECTION_ITEMS, MOCK_MONITORED_ENTITIES, MOCK_INVESTIGATION_CASES } from './constants';
+import { MOCK_TRANSACTIONS, STAT_DATA, MOCK_CUSTOMERS, MOCK_ACCOUNTS, MOCK_MODELS, MOCK_RISK_MODELS, MOCK_USERS, MOCK_SYSTEM_LOGS, RISK_DIST_DATA, TRX_VOLUME_DATA, MOCK_REPORTS, MOCK_CDD_CASES, MOCK_INSPECTION_ITEMS, MOCK_MONITORED_ENTITIES, MOCK_INVESTIGATION_CASES, MOCK_REGULATORY_NEWS } from './constants';
 import { Transaction, ReportStatus, TransactionType, MonitoringModel, RiskRatingModel, AiFeedback, Customer, RiskLevel, SystemUser, RegulatoryReport, InspectionStatus, CddStatus } from './types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell } from 'recharts';
-import { AlertOctagon, Banknote, CheckCircle2, Clock, Search, Filter, Plus, User, Building2, FileSearch, Settings2, Globe, AlertTriangle, Send, Bot, ArrowRightLeft, ShieldCheck, RefreshCw, FileCheck, ClipboardCheck, ScanFace, TrendingUp, FileText, Settings, Trash2, Users, Edit, Shield, FileClock, Briefcase, BrainCircuit, Network, Binary } from 'lucide-react';
+import { AlertOctagon, Banknote, CheckCircle2, Clock, Search, Filter, Plus, User, Building2, FileSearch, Settings2, Globe, AlertTriangle, Send, Bot, ArrowRightLeft, ShieldCheck, RefreshCw, FileCheck, ClipboardCheck, ScanFace, TrendingUp, FileText, Settings, Trash2, Users, Edit, Shield, FileClock, Briefcase, BrainCircuit, Network, Binary, Zap, Bell, Newspaper, Download, ExternalLink, ChevronRight } from 'lucide-react';
 
 function App() {
   const [activeView, setActiveView] = useState('dashboard');
@@ -153,86 +155,119 @@ function App() {
     // Investigation Cases Logic
     const openCasesCount = MOCK_INVESTIGATION_CASES.filter(c => c.status === '调查中').length;
 
+    // Latest 4 suspicious transactions for the feed
+    const recentAlerts = transactions
+        .filter(t => t.type === TransactionType.SUSPICIOUS)
+        .slice(0, 4);
+
     return (
       <div className="space-y-6 animate-in fade-in duration-500">
-        {/* Key Metrics Row 1: Operational Health */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        {/* Row 1: Key Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <StatCard 
-            title="待处置案例 (Alerts)" 
+            title="待处置预警" 
             value={pendingCount} 
-            icon={<AlertTriangle size={24} />} 
+            icon={<AlertTriangle size={20} />} 
             trend="+12% 较昨日" 
             colorClass="bg-white border-l-4 border-l-amber-500" 
           />
           <StatCard 
-            title="尽调任务待办 (CDD)" 
+            title="尽调任务待办" 
             value={activeCddCases} 
-            icon={<FileSearch size={24} />} 
+            icon={<FileSearch size={20} />} 
             trend="3 笔即将超期" 
             colorClass="bg-white border-l-4 border-l-blue-500" 
           />
            <StatCard 
-            title="在查案卷 (Cases)" 
+            title="在查案卷" 
             value={openCasesCount} 
-            icon={<Briefcase size={24} />} 
+            icon={<Briefcase size={20} />} 
             trend="1 笔高风险" 
             colorClass="bg-white border-l-4 border-l-purple-500" 
           />
           <StatCard 
-            title="高/极高风险客户" 
+            title="高风险客户" 
             value={highRiskCustomers} 
-            icon={<ShieldCheck size={24} />} 
+            icon={<ShieldCheck size={20} />} 
             trend="占总客户 8%" 
             colorClass="bg-white border-l-4 border-l-red-500" 
           />
           <StatCard 
             title="合规自检得分" 
             value={complianceScore} 
-            icon={<ClipboardCheck size={24} />} 
+            icon={<ClipboardCheck size={20} />} 
             trend={complianceScore < 90 ? "需整改" : "达标"} 
             colorClass={`bg-white border-l-4 ${complianceScore < 90 ? 'border-l-amber-500' : 'border-l-emerald-500'}`} 
           />
         </div>
 
-        {/* Row 2: Heatmap & Charts */}
+        {/* Row 2: Main Visuals (Map & Feed) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Phase 4: Geographic Risk Heatmap */}
-            <div className="lg:col-span-2 bg-white p-1 rounded-xl shadow-sm border border-slate-200 h-[400px]">
+            
+            {/* Risk Heatmap (Center Stage) */}
+            <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden h-[450px]">
                 <RiskHeatmap />
             </div>
 
-            {/* Risk Distribution */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-[400px] flex flex-col">
-                <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <TrendingUp size={18} className="text-blue-500"/> 全行客户风险分布
-                </h3>
-                <div className="flex-1">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={RISK_DIST_DATA} layout="vertical">
-                            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                            <XAxis type="number" hide />
-                            <YAxis dataKey="name" type="category" width={60} tick={{fontSize: 12}} />
-                            <Tooltip cursor={{fill: 'transparent'}} />
-                            <Bar dataKey="value" barSize={20} radius={[0, 4, 4, 0]}>
-                                {RISK_DIST_DATA.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
+            {/* Right Column: Quick Actions & Live Feed */}
+            <div className="flex flex-col gap-6 h-[450px]">
+                {/* Quick Actions */}
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 shrink-0">
+                    <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                        <Zap size={16} className="text-amber-500"/> 快捷入口
+                    </h3>
+                    <div className="grid grid-cols-2 gap-2">
+                        <button onClick={() => setActiveView('screening')} className="p-2 text-xs font-medium text-slate-600 bg-slate-50 hover:bg-blue-50 hover:text-blue-600 rounded transition-colors text-left flex items-center gap-2">
+                            <ScanFace size={14}/> 名单筛查
+                        </button>
+                        <button onClick={() => setActiveView('reports')} className="p-2 text-xs font-medium text-slate-600 bg-slate-50 hover:bg-blue-50 hover:text-blue-600 rounded transition-colors text-left flex items-center gap-2">
+                            <Download size={14}/> 下载日报
+                        </button>
+                        <button onClick={() => setActiveView('cdd')} className="p-2 text-xs font-medium text-slate-600 bg-slate-50 hover:bg-blue-50 hover:text-blue-600 rounded transition-colors text-left flex items-center gap-2">
+                            <Plus size={14}/> 新增尽调
+                        </button>
+                        <button onClick={() => setActiveView('models')} className="p-2 text-xs font-medium text-slate-600 bg-slate-50 hover:bg-blue-50 hover:text-blue-600 rounded transition-colors text-left flex items-center gap-2">
+                            <Settings2 size={14}/> 模型参数
+                        </button>
+                    </div>
+                </div>
+
+                {/* Live Alert Feed */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex-1 flex flex-col overflow-hidden">
+                    <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                         <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                            <Bell size={16} className="text-red-500"/> 实时预警流
+                        </h3>
+                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                        {recentAlerts.map(alert => (
+                            <div key={alert.id} onClick={() => setSelectedTransaction(alert)} className="p-3 rounded-lg border border-slate-100 hover:bg-blue-50 hover:border-blue-200 cursor-pointer transition-colors group">
+                                <div className="flex justify-between items-start mb-1">
+                                    <span className="text-[10px] font-bold text-slate-500">{alert.date.split(' ')[1]}</span>
+                                    <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 rounded border border-red-100">High Risk</span>
+                                </div>
+                                <p className="text-xs font-bold text-slate-800 truncate">{alert.triggerRule}</p>
+                                <div className="flex justify-between items-center mt-2">
+                                    <span className="text-xs text-slate-600">{alert.sender.name}</span>
+                                    <span className="text-xs font-mono font-bold text-slate-800">{alert.amount.toLocaleString()}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>
 
-        {/* Row 3: Trends & Summaries */}
+        {/* Row 3: Trends & News */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-             {/* Transaction Flow */}
-            <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+             {/* Transaction Flow Trend */}
+            <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-[300px] flex flex-col">
                 <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                     <ArrowRightLeft size={18} className="text-blue-500"/> 交易监测趋势 (7日)
                 </h3>
-                <div className="h-64">
+                <div className="flex-1">
                     <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={TRX_VOLUME_DATA}>
                         <defs>
@@ -256,23 +291,34 @@ function App() {
                 </div>
             </div>
 
-          {/* Alert Trend (Mini) */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <AlertTriangle size={18} className="text-blue-500"/> 近7日预警量
-            </h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={STAT_DATA}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={10} />
-                  <Tooltip />
-                  <Bar dataKey="large" stackId="a" fill="#3b82f6" />
-                  <Bar dataKey="suspicious" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+            {/* Regulatory News */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-[300px] overflow-hidden">
+                 <div className="p-4 border-b border-slate-100 bg-slate-50">
+                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <Newspaper size={18} className="text-indigo-500"/> 监管动态速递
+                    </h3>
+                 </div>
+                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                     {MOCK_REGULATORY_NEWS.map(news => (
+                         <div key={news.id} className="p-3 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors">
+                             <div className="flex justify-between items-center mb-1">
+                                 <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 rounded">{news.type}</span>
+                                 <span className="text-[10px] text-slate-400">{news.date}</span>
+                             </div>
+                             <h4 className="text-xs font-bold text-slate-800 mb-1 line-clamp-2">{news.title}</h4>
+                             <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                                 <span>{news.source}</span>
+                                 <ExternalLink size={10} />
+                             </div>
+                         </div>
+                     ))}
+                 </div>
+                 <div className="p-3 border-t border-slate-100 text-center">
+                     <button className="text-xs font-medium text-blue-600 hover:underline flex items-center justify-center gap-1">
+                         查看更多 <ChevronRight size={12} />
+                     </button>
+                 </div>
             </div>
-          </div>
         </div>
       </div>
     );
