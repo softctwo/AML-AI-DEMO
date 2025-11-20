@@ -7,56 +7,58 @@
 
 ## 📖 项目简介
 
-**AML Sentinel AI** 是一款面向现代银行业的智能反洗钱（AML）合规管理系统原型。它集成了传统规则引擎与生成式 AI（Google Gemini）能力，旨在提升合规人员在反洗钱监测、分析、尽职调查及监管报送环节的效率。
+**AML Sentinel AI** 是一款面向现代银行业的智能反洗钱（AML）合规管理系统原型。它打破了传统规则引擎与人工智能的界限，集成了**资金链路可视化**、**生成式 AI 助手**以及**案件全生命周期管理**功能，旨在赋能合规人员高效识别复杂的洗钱网络。
 
-系统严格对标中国人民银行（PBOC）及国际反洗钱监管标准（FATF），涵盖了从客户准入、风险评级、交易监测到可疑交易报告（STR）生成的全流程闭环。
+系统严格对标中国人民银行（PBOC）及国际反洗钱监管标准（FATF），涵盖了从客户准入、风险评级、交易监测、深度调查到监管报送的全流程闭环。
 
-## 🚀 核心功能
+## 🚀 核心功能 (全新升级)
 
-### 1. 🧠 AI 智能研判 (AI-Driven Analysis)
-*   **智能甄别**：集成 Google Gemini 2.5 Flash 模型，对触发预警的交易进行深度分析。
-*   **自动生成报告**：AI 自动撰写符合监管要求的《可疑交易甄别分析报告》及报送理由。
-*   **人机协同**：支持人工反馈（Feedback loop），持续优化 AI 模型准确度。
+### 1. 🧠 AI 智能研判与助手 (AI-Driven Analysis & Copilot)
+*   **Transaction Analysis**: 集成 Google Gemini 2.5 Flash 模型，自动撰写《可疑交易甄别分析报告》。
+*   **AML Copilot (AI 合规助手)**: 全局悬浮的智能助手，随时回答法规咨询（如3号令、164号文）、起草尽调话术或解释风险模型。
+*   **自动生成报文**: AI 自动生成符合监管标准的 XML 报送理由。
 
-### 2. 📊 全景驾驶舱 (Dashboard)
+### 2. 🕸️ 资金穿透与链路图谱 (Transaction Link Analysis) `NEW`
+*   **可视化溯源**: 在交易详情中提供动态资金流向图。
+*   **上下游穿透**: 自动展示资金来源（Upstream）与资金去向（Downstream），快速识别“分散转入集中转出”、“回路交易”等洗钱特征。
+*   **风险高亮**: 用颜色区分高风险节点与异常资金路径。
+
+### 3. 💼 统一调查案卷中心 (Case Investigation) `NEW`
+*   **一案一档**: 将分散的预警（Alerts）聚合为案件（Cases）进行统一管理。
+*   **全景视图**: 一个案卷可关联多个可疑交易、多个实体及证据材料。
+*   **生命周期管理**: 支持立案、调查、复核、结案（上报/排除）的全流程记录。
+
+### 4. 📊 全景驾驶舱 (Dashboard)
 *   实时监控全行合规运营健康度。
 *   可视化展示待处置预警、尽调任务堆积、高风险客户占比及合规自检得分。
 
-### 3. 🔍 客户尽职调查 (CDD/KYC)
-*   **看板管理**：基于 Kanban 的尽调任务流转（新建 -> 尽调中 -> 待审批 -> 归档）。
-*   **自动化检查**：集成 OCR、人脸识别、制裁名单筛查等模拟接口状态。
-*   **风险评分**：动态计算客户风险分值，支持增强尽职调查（EDD）流程。
+### 5. 🔍 客户尽职调查 (CDD/KYC)
+*   **看板管理**: 基于 Kanban 的尽调任务流转（新建 -> 尽调中 -> 待审批 -> 归档）。
+*   **自动化检查**: 集成模拟的 OCR、人脸识别、制裁名单筛查接口。
+*   **风险评分**: 动态计算客户风险分值，支持增强尽职调查（EDD）流程。
 
-### 4. 🕸️ 受益所有人管理 (UBO)
-*   **股权穿透图谱**：可视化展示多层级股权结构，自动识别最终受益人（UBO）。
-*   **核实管理**：管理受益人身份信息核实状态及证件有效期。
+### 6. 👥 受益所有人管理 (UBO)
+*   **股权穿透图谱**: 可视化展示多层级股权结构，自动识别最终受益人（UBO）。
+*   **核实管理**: 管理受益人身份信息核实状态及证件有效期。
 
-### 5. 🚨 监测模型与预警 (Transaction Monitoring)
-*   **双引擎监测**：支持“大额交易（LCTR）”与“可疑交易（STR）”监测。
-*   **模型配置**：低代码配置监测规则（如：快进快出、频繁跨境、夜间涉赌等），支持参数回测。
+### 7. 🚨 监测模型与预警 (Transaction Monitoring)
+*   **双引擎监测**: 支持“大额交易（LCTR）”与“可疑交易（STR）”监测。
+*   **低代码配置**: 灵活配置监测规则（如：快进快出、频繁跨境、夜间涉赌等），支持参数回测。
 
-### 6. 📋 智能名单筛查 (Screening)
+### 8. 📋 智能名单筛查 (Screening)
 *   集成制裁名单（Sanctions）、政治公众人物（PEP）、负面媒体（Adverse Media）筛查。
 *   支持模糊匹配与持续监控名单管理。
 
-### 7. 📝 监管报送 (Regulatory Reporting)
-*   自动生成符合监管标准的 XML 报文。
-*   模拟反洗钱中心回执反馈（通过/驳回/错误）。
-
-### 8. 🛡️ 风险评级 (Risk Rating)
-*   自定义评分因子（地域、行业、产品等）与权重配置。
-*   记录评级变更历史轨迹。
-
 ### 9. ✅ 现场检查自检 (Self-Inspection)
 *   内置合规自查清单（内控制度、KYC、资料保存等）。
-*   **300号文接口**：模拟生成银发〔2017〕300号文要求的标准数据提取接口（XML/Excel）。
+*   **300号文接口**: 模拟生成银发〔2017〕300号文要求的标准数据提取接口（XML/Excel）。
 
 ## 🛠️ 技术栈
 
 *   **前端框架**: React 19 (TypeScript)
 *   **样式库**: Tailwind CSS
 *   **图标库**: Lucide React
-*   **图表库**: Recharts
+*   **图表与可视化**: Recharts (统计图表) / SVG (资金链路图谱)
 *   **AI SDK**: Google GenAI SDK (`@google/genai`)
 *   **Markdown 渲染**: React Markdown
 
@@ -100,19 +102,22 @@
 
 ```
 src/
-├── components/          # 业务组件模块
-│   ├── AnalysisPanel.tsx    # AI 分析面板
-│   ├── CddModule.tsx        # 尽职调查模块
+├── components/              # 业务组件模块
+│   ├── AnalysisPanel.tsx        # AI 分析面板
+│   ├── CaseInvestigationModule.tsx # 调查案卷模块 (NEW)
+│   ├── CopilotWidget.tsx        # AI 合规助手悬浮窗 (NEW)
+│   ├── TransactionDetailModal.tsx # 包含资金链路图谱 (UPDATED)
+│   ├── CddModule.tsx            # 尽职调查模块
 │   ├── BeneficialOwnerModule.tsx # UBO 模块
-│   ├── ScreeningModule.tsx  # 名单筛查模块
-│   ├── Sidebar.tsx          # 侧边导航
+│   ├── ScreeningModule.tsx      # 名单筛查模块
+│   ├── Sidebar.tsx              # 侧边导航
 │   └── ...
-├── services/            # 服务层
-│   └── geminiService.ts     # Google Gemini API 封装
-├── types.ts             # TypeScript 类型定义
-├── constants.ts         # 模拟数据 (Mock Data)
-├── App.tsx              # 主应用入口与路由逻辑
-└── index.tsx            # 渲染入口
+├── services/                # 服务层
+│   └── geminiService.ts         # Google Gemini API 封装
+├── types.ts                 # TypeScript 类型定义
+├── constants.ts             # 模拟数据 (Mock Data)
+├── App.tsx                  # 主应用入口与路由逻辑
+└── index.tsx                # 渲染入口
 ```
 
 ## ⚠️ 免责声明

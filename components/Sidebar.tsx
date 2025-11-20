@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { LayoutDashboard, AlertTriangle, FileText, ShieldCheck, Activity, Database, Sliders, TrendingUp, Settings, ClipboardCheck, ScanFace, Users, FileSearch } from 'lucide-react';
+import { LayoutDashboard, AlertTriangle, FileText, ShieldCheck, Activity, Database, Sliders, TrendingUp, Settings, ClipboardCheck, ScanFace, Users, FileSearch, Briefcase } from 'lucide-react';
 
 interface SidebarProps {
   activeView: string;
@@ -8,24 +8,13 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
-  // 1. Dashboard (首页)
-  // 2. Risk Rating Management (风险评级管理)
-  // 3. Monitoring Model Management (监测模型管理)
-  // 4. Intelligent Screening (智能名单筛查)
-  // 5. Case Management (案例处置 - formerly Alerts)
-  // 6. Regulatory Reporting (监管报送)
-  // 7. Data Query (数据查询)
-  // 8. Customer Due Diligence (客户尽职调查)
-  // 9. Beneficial Owner Management (受益所有人管理)
-  // 10. Self-Inspection (现场检查自检)
-  // 11. System Management (系统管理)
-
   const navItems = [
     { id: 'dashboard', label: '首页概览', icon: LayoutDashboard },
     { id: 'risk-rating', label: '风险评级管理', icon: TrendingUp },
     { id: 'models', label: '监测模型管理', icon: Sliders },
     { id: 'screening', label: '智能名单筛查', icon: ScanFace },
     { id: 'alerts', label: '案例处置', icon: AlertTriangle },
+    { id: 'cases', label: '调查案卷中心', icon: Briefcase }, // New Module Scheme C
     { id: 'reports', label: '监管报送', icon: FileText },
     { id: 'data-query', label: '数据查询', icon: Database },
     { id: 'cdd', label: '客户尽职调查', icon: FileSearch },

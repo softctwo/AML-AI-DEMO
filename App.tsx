@@ -13,10 +13,12 @@ import { SelfInspectionModule } from './components/SelfInspectionModule';
 import { ScreeningModule } from './components/ScreeningModule';
 import { BeneficialOwnerModule } from './components/BeneficialOwnerModule';
 import { CddModule } from './components/CddModule';
-import { MOCK_TRANSACTIONS, STAT_DATA, MOCK_CUSTOMERS, MOCK_ACCOUNTS, MOCK_MODELS, MOCK_RISK_MODELS, MOCK_USERS, MOCK_SYSTEM_LOGS, RISK_DIST_DATA, TRX_VOLUME_DATA, MOCK_REPORTS, MOCK_CDD_CASES, MOCK_INSPECTION_ITEMS, MOCK_MONITORED_ENTITIES } from './constants';
+import { CopilotWidget } from './components/CopilotWidget'; // Scheme B
+import { CaseInvestigationModule } from './components/CaseInvestigationModule'; // Scheme C
+import { MOCK_TRANSACTIONS, STAT_DATA, MOCK_CUSTOMERS, MOCK_ACCOUNTS, MOCK_MODELS, MOCK_RISK_MODELS, MOCK_USERS, MOCK_SYSTEM_LOGS, RISK_DIST_DATA, TRX_VOLUME_DATA, MOCK_REPORTS, MOCK_CDD_CASES, MOCK_INSPECTION_ITEMS, MOCK_MONITORED_ENTITIES, MOCK_INVESTIGATION_CASES } from './constants';
 import { Transaction, ReportStatus, TransactionType, MonitoringModel, RiskRatingModel, AiFeedback, Customer, RiskLevel, SystemUser, RegulatoryReport, InspectionStatus, CddStatus } from './types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell } from 'recharts';
-import { AlertOctagon, Banknote, CheckCircle2, Clock, Search, Filter, Plus, User, Building2, FileSearch, Settings2, Globe, AlertTriangle, Send, Bot, ArrowRightLeft, ShieldCheck, RefreshCw, FileCheck, ClipboardCheck, ScanFace, TrendingUp, FileText, Settings, Trash2, Users, Edit, Shield, FileClock } from 'lucide-react';
+import { AlertOctagon, Banknote, CheckCircle2, Clock, Search, Filter, Plus, User, Building2, FileSearch, Settings2, Globe, AlertTriangle, Send, Bot, ArrowRightLeft, ShieldCheck, RefreshCw, FileCheck, ClipboardCheck, ScanFace, TrendingUp, FileText, Settings, Trash2, Users, Edit, Shield, FileClock, Briefcase } from 'lucide-react';
 
 function App() {
   const [activeView, setActiveView] = useState('dashboard');
@@ -153,6 +155,9 @@ function App() {
     
     // Screening Logic
     const monitoredEntityCount = MOCK_MONITORED_ENTITIES.length;
+    
+    // Investigation Cases Logic
+    const openCasesCount = MOCK_INVESTIGATION_CASES.filter(c => c.status === '调查中').length;
 
     return (
       <div className="space-y-6 animate-in fade-in duration-500">
@@ -173,11 +178,11 @@ function App() {
             colorClass="bg-white border-l-4 border-l-blue-500" 
           />
            <StatCard 
-            title="待核实受益人 (UBO)" 
-            value={pendingUboCount} 
-            icon={<Users size={24} />} 
-            trend="需补录证件" 
-            colorClass="bg-white border-l-4 border-l-indigo-500" 
+            title="在查案卷 (Cases)" 
+            value={openCasesCount} 
+            icon={<Briefcase size={24} />} 
+            trend="1 笔高风险" 
+            colorClass="bg-white border-l-4 border-l-purple-500" 
           />
           <StatCard 
             title="高/极高风险客户" 
@@ -991,6 +996,7 @@ function App() {
                         {activeView === 'screening' && '智能名单筛查 (Screening)'}
                         {activeView === 'ubo' && '受益所有人管理 (UBO)'}
                         {activeView === 'cdd' && '客户尽职调查 (CDD)'}
+                        {activeView === 'cases' && '调查案卷中心 (Investigation Cases)'}
                     </h1>
                     <p className="text-slate-500 text-sm mt-1">
                         {new Date().toLocaleDateString('zh-CN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
@@ -1008,7 +1014,7 @@ function App() {
             </header>
 
             {/* Dynamic Content */}
-            <main>
+            <main className="pb-16">
                 {activeView === 'dashboard' && renderDashboard()}
                 {activeView === 'alerts' && renderAlerts()}
                 {activeView === 'models' && renderModels()}
@@ -1020,9 +1026,13 @@ function App() {
                 {activeView === 'screening' && <ScreeningModule />}
                 {activeView === 'ubo' && <BeneficialOwnerModule />}
                 {activeView === 'cdd' && <CddModule />}
+                {activeView === 'cases' && <CaseInvestigationModule />}
             </main>
         </div>
       </div>
+
+      {/* Global Copilot Widget */}
+      <CopilotWidget />
 
       {/* Global Modals */}
       {selectedTransaction && (

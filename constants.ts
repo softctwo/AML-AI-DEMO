@@ -1,5 +1,5 @@
 
-import { Transaction, TransactionType, ReportStatus, RiskLevel, Customer, Account, MonitoringModel, RiskRatingModel, SystemUser, SystemLog, RegulatoryReport, InspectionItem, InspectionStatus, MonitoredEntity, ScreeningHit, ScreeningCategory, StandardReportTable, CustomerStructure, CddCase, CddStatus, RiskRatingFactor } from './types';
+import { Transaction, TransactionType, ReportStatus, RiskLevel, Customer, Account, MonitoringModel, RiskRatingModel, SystemUser, SystemLog, RegulatoryReport, InspectionItem, InspectionStatus, MonitoredEntity, ScreeningHit, ScreeningCategory, StandardReportTable, CustomerStructure, CddCase, CddStatus, InvestigationCase, CaseStatus, GraphNode, GraphLink } from './types';
 
 // 模拟客户数据 (增强版 - 包含UBO状态)
 export const MOCK_CUSTOMERS: Customer[] = [
@@ -462,7 +462,7 @@ export const MOCK_STRUCTURES: CustomerStructure[] = [
     }
 ];
 
-// --- 新增：模拟客户尽职调查 (CDD) 案例数据 ---
+// 模拟客户尽职调查 (CDD) 案例数据
 export const MOCK_CDD_CASES: CddCase[] = [
   {
     id: 'CDD-2023-001',
@@ -542,6 +542,52 @@ export const MOCK_CDD_CASES: CddCase[] = [
   }
 ];
 
+// 模拟调查案卷 (Scheme C)
+export const MOCK_INVESTIGATION_CASES: InvestigationCase[] = [
+    {
+        id: 'CASE-2023-001',
+        title: '关于"豪运在线娱乐"涉嫌网络赌博资金清洗的调查',
+        primarySubjectId: 'C011',
+        primarySubjectName: '豪运在线娱乐',
+        createDate: '2023-10-20',
+        status: CaseStatus.OPEN,
+        owner: 'zhangwei',
+        severity: '高',
+        linkedAlerts: ['TRX-2023-006', 'TRX-2023-007'],
+        linkedEntities: ['C011', 'C005', 'C010'],
+        description: '该客户账户在夜间（22:00-04:00）存在大量频繁的小额入账，金额多为整数倍，且资金在次日集中转出至境外账户。'
+    },
+    {
+        id: 'CASE-2023-002',
+        title: '张伟账户资金快进快出异常调查',
+        primarySubjectId: 'C003',
+        primarySubjectName: '张伟',
+        createDate: '2023-10-22',
+        status: CaseStatus.PENDING_REVIEW,
+        owner: 'lihua',
+        severity: '中',
+        linkedAlerts: ['TRX-2023-002'],
+        linkedEntities: ['C003'],
+        description: '客户短期内收到多笔大额资金并迅速转出，留存余额极低，疑似过渡账户。'
+    }
+];
+
+// 模拟资金链路图数据 (Scheme A) - 用于 Transaction Detail
+export const MOCK_GRAPH_NODES: GraphNode[] = [
+    { id: 'N1', name: '上游-贸易公司A', type: 'customer', riskLevel: RiskLevel.LOW },
+    { id: 'N2', name: '上游-个体户B', type: 'customer', riskLevel: RiskLevel.MEDIUM },
+    { id: 'CENTER', name: '当前交易主体', type: 'account', riskLevel: RiskLevel.HIGH, isFocus: true },
+    { id: 'N3', name: '下游-博彩网站', type: 'external', riskLevel: RiskLevel.CRITICAL },
+    { id: 'N4', name: '下游-兑换店', type: 'external', riskLevel: RiskLevel.HIGH },
+];
+
+export const MOCK_GRAPH_LINKS: GraphLink[] = [
+    { source: 'N1', target: 'CENTER', amount: 500000, currency: 'CNY', date: '2023-10-24 09:00' },
+    { source: 'N2', target: 'CENTER', amount: 300000, currency: 'CNY', date: '2023-10-24 09:30' },
+    { source: 'CENTER', target: 'N3', amount: 750000, currency: 'CNY', date: '2023-10-24 10:00', isSuspicious: true },
+    { source: 'CENTER', target: 'N4', amount: 40000, currency: 'CNY', date: '2023-10-24 10:15' },
+];
+
 // 权限定义
 export const AVAILABLE_PERMISSIONS = [
     { key: 'ALERT_HANDLE', label: '预警处理 (查看/分析/排除)' },
@@ -551,5 +597,6 @@ export const AVAILABLE_PERMISSIONS = [
     { key: 'USER_MGMT', label: '用户管理 (新增/赋权)' },
     { key: 'DATA_QUERY', label: '数据查询 (客户/交易)' },
     { key: 'REVIEW', label: '复核审批 (CDD/大额审批)' },
+    { key: 'CASE_MGMT', label: '案件调查管理' },
     { key: 'ALL', label: '超级管理员权限' }
 ];
