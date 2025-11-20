@@ -1,5 +1,6 @@
 
 
+
 import { Transaction, TransactionType, ReportStatus, RiskLevel, Customer, Account, MonitoringModel, RiskRatingModel, SystemUser, SystemLog, RegulatoryReport, InspectionItem, InspectionStatus, MonitoredEntity, ScreeningHit, ScreeningCategory, StandardReportTable, CustomerStructure, CddCase, CddStatus, InvestigationCase, CaseStatus, GraphNode, GraphLink } from './types';
 
 // 模拟客户数据 (增强版 - 包含UBO状态)
@@ -199,6 +200,7 @@ export const MOCK_MODELS: MonitoringModel[] = [
     id: 'MDL-LV-01',
     name: '大额现金交易监测',
     type: '大额',
+    techType: '规则',
     description: '监测单笔或当日累计人民币交易超过规定阈值的行为。依据PBOC大额交易报告管理办法。',
     threshold: 50000,
     thresholdCurrency: 'CNY',
@@ -219,6 +221,7 @@ export const MOCK_MODELS: MonitoringModel[] = [
     id: 'MDL-LV-02',
     name: '大额转账交易监测 (对公)',
     type: '大额',
+    techType: '规则',
     description: '监测对公账户单笔或当日累计转账超过规定阈值。重点关注非工作时间交易。',
     threshold: 2000000,
     thresholdCurrency: 'CNY',
@@ -239,6 +242,7 @@ export const MOCK_MODELS: MonitoringModel[] = [
     id: 'MDL-SUS-01',
     name: '分散转入集中转出',
     type: '可疑',
+    techType: '规则',
     description: '短期内资金分散转入，随后集中转出，或反之。符合"快进快出"洗钱特征。',
     threshold: 10,
     thresholdCurrency: 'COUNT',
@@ -259,6 +263,7 @@ export const MOCK_MODELS: MonitoringModel[] = [
     id: 'MDL-SUS-02',
     name: '频繁跨境汇款',
     type: '可疑',
+    techType: '规则',
     description: '向敏感国家或地区频繁进行跨境资金转移。',
     threshold: 10000,
     thresholdCurrency: 'USD',
@@ -279,6 +284,7 @@ export const MOCK_MODELS: MonitoringModel[] = [
     id: 'MDL-SUS-03',
     name: '网络赌博特征监测',
     type: '可疑',
+    techType: '规则',
     description: '监测夜间频繁小额转账、整百整千金额交易，对手方涉及已知博彩商户或风险账户。',
     threshold: 5,
     thresholdCurrency: 'COUNT',
@@ -293,6 +299,50 @@ export const MOCK_MODELS: MonitoringModel[] = [
     stats: {
       dailyAlerts: 25,
       falsePositiveRate: '20%'
+    }
+  },
+  {
+    id: 'MDL-AI-01',
+    name: 'XGBoost 交易欺诈评分模型',
+    type: '可疑',
+    techType: '机器学习',
+    description: '基于梯度提升树(XGBoost)的监督学习模型，利用历史已确认的洗钱案例进行训练，有效识别新型复杂洗钱模式。',
+    threshold: 85,
+    thresholdCurrency: 'SCORE',
+    riskScoreWeight: 95,
+    isEnabled: true,
+    parameters: {
+        '算法': 'XGBoost v1.7',
+        '特征数量': 128,
+        '重训练周期': '每周',
+        '样本不平衡处理': 'SMOTE'
+    },
+    lastUpdated: '2023-10-01',
+    stats: {
+        dailyAlerts: 5,
+        falsePositiveRate: '8%'
+    }
+  },
+  {
+    id: 'MDL-GRAPH-01',
+    name: '资金闭环与团伙挖掘 (Louvain)',
+    type: '可疑',
+    techType: '图谱',
+    description: '利用图计算技术识别复杂的资金闭环（Loop）和高密度交易团伙（Community）。',
+    threshold: 0,
+    thresholdCurrency: 'NA',
+    riskScoreWeight: 85,
+    isEnabled: true,
+    parameters: {
+        '图算法': 'Louvain Community Detection',
+        '最大跳数': 3,
+        '边权重': '交易金额',
+        '最小团伙人数': 4
+    },
+    lastUpdated: '2023-09-15',
+    stats: {
+        dailyAlerts: 2,
+        falsePositiveRate: '15%'
     }
   }
 ];

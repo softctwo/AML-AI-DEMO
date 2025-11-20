@@ -1,4 +1,6 @@
 
+
+
 import React, { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { StatCard } from './components/StatCard';
@@ -20,7 +22,7 @@ import { SystemGuide } from './components/SystemGuide'; // System Guide Componen
 import { MOCK_TRANSACTIONS, STAT_DATA, MOCK_CUSTOMERS, MOCK_ACCOUNTS, MOCK_MODELS, MOCK_RISK_MODELS, MOCK_USERS, MOCK_SYSTEM_LOGS, RISK_DIST_DATA, TRX_VOLUME_DATA, MOCK_REPORTS, MOCK_CDD_CASES, MOCK_INSPECTION_ITEMS, MOCK_MONITORED_ENTITIES, MOCK_INVESTIGATION_CASES } from './constants';
 import { Transaction, ReportStatus, TransactionType, MonitoringModel, RiskRatingModel, AiFeedback, Customer, RiskLevel, SystemUser, RegulatoryReport, InspectionStatus, CddStatus } from './types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell } from 'recharts';
-import { AlertOctagon, Banknote, CheckCircle2, Clock, Search, Filter, Plus, User, Building2, FileSearch, Settings2, Globe, AlertTriangle, Send, Bot, ArrowRightLeft, ShieldCheck, RefreshCw, FileCheck, ClipboardCheck, ScanFace, TrendingUp, FileText, Settings, Trash2, Users, Edit, Shield, FileClock, Briefcase } from 'lucide-react';
+import { AlertOctagon, Banknote, CheckCircle2, Clock, Search, Filter, Plus, User, Building2, FileSearch, Settings2, Globe, AlertTriangle, Send, Bot, ArrowRightLeft, ShieldCheck, RefreshCw, FileCheck, ClipboardCheck, ScanFace, TrendingUp, FileText, Settings, Trash2, Users, Edit, Shield, FileClock, Briefcase, BrainCircuit, Network, Binary } from 'lucide-react';
 
 function App() {
   const [activeView, setActiveView] = useState('dashboard');
@@ -33,6 +35,7 @@ function App() {
 
   // Models State
   const [models, setModels] = useState<MonitoringModel[]>(MOCK_MODELS);
+  const [modelFilter, setModelFilter] = useState<'all' | 'rule' | 'ml' | 'graph'>('all');
   
   // Risk Management State
   const [riskMgmtTab, setRiskMgmtTab] = useState<'query' | 'model'>('query');
@@ -412,68 +415,130 @@ function App() {
   );
 
   // Monitoring Model Configuration View
-  const renderModels = () => (
-    <div className="space-y-6 animate-in fade-in">
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-bold text-slate-800">大额/可疑交易监测模型配置</h2>
-        <button 
-            onClick={() => { setEditingModel(null); setIsCreatingModel(true); }}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all"
-        >
-            <Plus size={18} /> 新增模型
-        </button>
-      </div>
+  const renderModels = () => {
+      const filteredModels = models.filter(m => {
+          if (modelFilter === 'all') return true;
+          if (modelFilter === 'rule') return m.techType === '规则';
+          if (modelFilter === 'ml') return m.techType === '机器学习';
+          if (modelFilter === 'graph') return m.techType === '图谱';
+          return true;
+      });
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {models.map((model) => (
-            <div key={model.id} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${model.type === '大额' ? 'bg-blue-100 text-blue-600' : 'bg-red-100 text-red-600'}`}>
-                    {model.type === '大额' ? <Banknote size={20} /> : <AlertTriangle size={20} />}
-                </div>
-                <div>
-                    <h3 className="font-bold text-slate-800">{model.name}</h3>
-                    <span className="text-xs text-slate-500 font-mono">{model.id}</span>
-                </div>
-                </div>
-                <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${model.isEnabled ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
-                <div className={`w-2 h-2 rounded-full ${model.isEnabled ? 'bg-emerald-500' : 'bg-slate-400'}`}></div>
-                {model.isEnabled ? '运行中' : '已停用'}
-                </div>
-            </div>
-            
-            <p className="text-sm text-slate-600 mb-4 h-10 line-clamp-2">{model.description}</p>
-            
-            <div className="grid grid-cols-3 gap-4 mb-4 p-3 bg-slate-50 rounded-lg">
-                <div>
-                    <span className="text-xs text-slate-400 block">阈值</span>
-                    <span className="text-sm font-bold text-slate-700">{model.threshold.toLocaleString()} {model.thresholdCurrency}</span>
-                </div>
-                <div>
-                    <span className="text-xs text-slate-400 block">风险分值</span>
-                    <span className="text-sm font-bold text-slate-700">{model.riskScoreWeight}</span>
-                </div>
-                <div>
-                    <span className="text-xs text-slate-400 block">日均预警</span>
-                    <span className="text-sm font-bold text-slate-700">{model.stats?.dailyAlerts || '-'}</span>
-                </div>
-            </div>
+      const getTechIcon = (type: string) => {
+          switch(type) {
+              case '机器学习': return <BrainCircuit size={20} />;
+              case '图谱': return <Network size={20} />;
+              default: return <Binary size={20} />;
+          }
+      };
 
-            <div className="flex justify-between items-center pt-4 border-t border-slate-100">
-                <span className="text-xs text-slate-400">更新于: {model.lastUpdated}</span>
-                <button 
-                onClick={() => setEditingModel(model)}
-                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium"
+      const getTechColor = (type: string) => {
+        switch(type) {
+            case '机器学习': return 'bg-purple-100 text-purple-600';
+            case '图谱': return 'bg-orange-100 text-orange-600';
+            default: return 'bg-blue-100 text-blue-600';
+        }
+    };
+
+      return (
+        <div className="space-y-6 animate-in fade-in">
+        <div className="flex justify-between items-center">
+            <h2 className="text-lg font-bold text-slate-800">监测模型管理中心</h2>
+            <button 
+                onClick={() => { setEditingModel(null); setIsCreatingModel(true); }}
+                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all"
+            >
+                <Plus size={18} /> 新增模型
+            </button>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="bg-white p-1 rounded-lg border border-slate-200 inline-flex">
+            {[
+                { id: 'all', label: '全部模型' },
+                { id: 'rule', label: '规则引擎' },
+                { id: 'ml', label: '机器学习 (AI)' },
+                { id: 'graph', label: '图谱分析' },
+            ].map(tab => (
+                <button
+                    key={tab.id}
+                    onClick={() => setModelFilter(tab.id as any)}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${modelFilter === tab.id ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
                 >
-                <Settings2 size={16} /> 配置
+                    {tab.label}
                 </button>
-            </div>
-            </div>
-        ))}
-      </div>
-    </div>
-  );
+            ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {filteredModels.map((model) => (
+                <div key={model.id} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${getTechColor(model.techType)}`}>
+                            {getTechIcon(model.techType)}
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                                {model.name}
+                                <span className="text-xs font-normal text-slate-400 px-2 py-0.5 border border-slate-100 rounded bg-slate-50">{model.techType}</span>
+                            </h3>
+                            <span className="text-xs text-slate-500 font-mono">{model.id}</span>
+                        </div>
+                    </div>
+                    <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${model.isEnabled ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
+                    <div className={`w-2 h-2 rounded-full ${model.isEnabled ? 'bg-emerald-500' : 'bg-slate-400'}`}></div>
+                    {model.isEnabled ? '运行中' : '已停用'}
+                    </div>
+                </div>
+                
+                <p className="text-sm text-slate-600 mb-4 h-10 line-clamp-2">{model.description}</p>
+                
+                <div className="grid grid-cols-3 gap-4 mb-4 p-3 bg-slate-50 rounded-lg">
+                    <div>
+                        <span className="text-xs text-slate-400 block">
+                            {model.techType === '规则' ? '触发阈值' : model.techType === '机器学习' ? '判别阈值' : '参数配置'}
+                        </span>
+                        <span className="text-sm font-bold text-slate-700">
+                            {model.threshold > 0 ? `${model.threshold.toLocaleString()} ${model.thresholdCurrency}` : '自定义'}
+                        </span>
+                    </div>
+                    <div>
+                        <span className="text-xs text-slate-400 block">风险分值</span>
+                        <span className="text-sm font-bold text-slate-700">{model.riskScoreWeight}</span>
+                    </div>
+                    <div>
+                        <span className="text-xs text-slate-400 block">日均预警</span>
+                        <span className="text-sm font-bold text-slate-700">{model.stats?.dailyAlerts || '-'}</span>
+                    </div>
+                </div>
+
+                {/* Tech Specific Params Preview */}
+                {model.techType !== '规则' && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                        {Object.entries(model.parameters).slice(0, 3).map(([key, val]) => (
+                            <span key={key} className="text-[10px] px-2 py-1 bg-slate-100 text-slate-600 rounded border border-slate-200">
+                                {key}: {val}
+                            </span>
+                        ))}
+                    </div>
+                )}
+
+                <div className="flex justify-between items-center pt-4 border-t border-slate-100">
+                    <span className="text-xs text-slate-400">更新于: {model.lastUpdated}</span>
+                    <button 
+                    onClick={() => setEditingModel(model)}
+                    className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                    <Settings2 size={16} /> 配置
+                    </button>
+                </div>
+                </div>
+            ))}
+        </div>
+        </div>
+      );
+  };
 
   // Risk Rating Management View (Query & Model Config)
   const renderRiskManagement = () => (

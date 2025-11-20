@@ -1,7 +1,9 @@
 
+
+
 import React, { useState } from 'react';
-import { MonitoringModel } from '../types';
-import { X, Save, AlertCircle, Sliders, Activity, Play, RotateCcw, Trash2, Plus } from 'lucide-react';
+import { MonitoringModel, ModelTechType } from '../types';
+import { X, Save, AlertCircle, Sliders, Activity, Play, RotateCcw, Trash2, Plus, BrainCircuit, Network, Binary } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface ModelConfigModalProps {
@@ -15,7 +17,8 @@ export const ModelConfigModal: React.FC<ModelConfigModalProps> = ({ model, onClo
   const defaultModel: MonitoringModel = {
     id: `MDL-NEW-${Date.now()}`,
     name: '新建监测模型',
-    type: '大额',
+    type: '可疑',
+    techType: '规则',
     description: '',
     threshold: 0,
     thresholdCurrency: 'CNY',
@@ -39,6 +42,16 @@ export const ModelConfigModal: React.FC<ModelConfigModalProps> = ({ model, onClo
   const handleBasicChange = (field: keyof MonitoringModel, value: any) => {
     setFormData({ ...formData, [field]: value });
     setIsDirty(true);
+  };
+
+  const handleTechTypeChange = (type: ModelTechType) => {
+      setFormData({ 
+          ...formData, 
+          techType: type,
+          // Reset relevant params based on type for UX
+          thresholdCurrency: type === '规则' ? 'CNY' : type === '机器学习' ? 'SCORE' : 'NA'
+      });
+      setIsDirty(true);
   };
 
   const handleParamChange = (key: string, value: string | number) => {
@@ -122,7 +135,7 @@ export const ModelConfigModal: React.FC<ModelConfigModalProps> = ({ model, onClo
                 )}
                 {!isNew && <span className="text-xs font-mono text-slate-400 bg-white px-2 py-1 border border-slate-200 rounded">{formData.id}</span>}
             </div>
-            <p className="text-sm text-slate-500 mt-1">{isNew ? '创建新的交易监测规则' : `${formData.type}交易监测模型`}</p>
+            <p className="text-sm text-slate-500 mt-1">{isNew ? '创建新的监测模型' : `${formData.techType} 模型配置`}</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
             <X size={20} />
@@ -135,13 +148,13 @@ export const ModelConfigModal: React.FC<ModelConfigModalProps> = ({ model, onClo
                 onClick={() => setActiveTab('basic')} 
                 className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'basic' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
             >
-                <div className="flex items-center gap-2"><Sliders size={16} /> 基础配置</div>
+                <div className="flex items-center gap-2"><Sliders size={16} /> 核心配置</div>
             </button>
             <button 
                 onClick={() => setActiveTab('params')} 
                 className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'params' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
             >
-                <div className="flex items-center gap-2"><Activity size={16} /> 参数调优</div>
+                <div className="flex items-center gap-2"><Activity size={16} /> 高级参数</div>
             </button>
             <button 
                 onClick={() => setActiveTab('test')} 
@@ -157,80 +170,119 @@ export const ModelConfigModal: React.FC<ModelConfigModalProps> = ({ model, onClo
             {/* Basic Config Tab */}
             {activeTab === 'basic' && (
                 <div className="space-y-6 animate-in fade-in duration-300">
+                    {/* Technology Selection */}
                     <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
-                        <div className="flex justify-between items-center mb-4">
-                            <label className="font-semibold text-slate-700">模型状态</label>
-                            <div className="flex items-center gap-3">
-                                <span className={`text-sm font-medium ${formData.isEnabled ? 'text-green-600' : 'text-slate-500'}`}>
-                                    {formData.isEnabled ? '运行中' : '已停用'}
-                                </span>
-                                <button 
-                                    onClick={() => handleBasicChange('isEnabled', !formData.isEnabled)}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formData.isEnabled ? 'bg-green-500' : 'bg-slate-300'}`}
-                                >
-                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.isEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-                                </button>
-                            </div>
+                        <label className="block text-sm font-medium text-slate-700 mb-3">技术路线 (Technology Stack)</label>
+                        <div className="grid grid-cols-3 gap-4">
+                            <button
+                                onClick={() => handleTechTypeChange('规则')}
+                                className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${formData.techType === '规则' ? 'bg-blue-50 border-blue-500 text-blue-700 ring-1 ring-blue-500' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                            >
+                                <Binary size={24} />
+                                <span className="text-sm font-medium">规则引擎</span>
+                            </button>
+                            <button
+                                onClick={() => handleTechTypeChange('机器学习')}
+                                className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${formData.techType === '机器学习' ? 'bg-purple-50 border-purple-500 text-purple-700 ring-1 ring-purple-500' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                            >
+                                <BrainCircuit size={24} />
+                                <span className="text-sm font-medium">机器学习 (ML)</span>
+                            </button>
+                            <button
+                                onClick={() => handleTechTypeChange('图谱')}
+                                className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${formData.techType === '图谱' ? 'bg-orange-50 border-orange-500 text-orange-700 ring-1 ring-orange-500' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                            >
+                                <Network size={24} />
+                                <span className="text-sm font-medium">图谱分析</span>
+                            </button>
                         </div>
-                        {isNew && (
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-slate-700 mb-2">监测类型</label>
-                                <div className="flex gap-4">
-                                    <label className="flex items-center gap-2">
-                                        <input 
-                                            type="radio" 
-                                            name="type" 
-                                            checked={formData.type === '大额'} 
-                                            onChange={() => handleBasicChange('type', '大额')}
-                                            className="accent-blue-600"
-                                        />
-                                        <span className="text-sm text-slate-600">大额监测</span>
-                                    </label>
-                                    <label className="flex items-center gap-2">
-                                        <input 
-                                            type="radio" 
-                                            name="type" 
-                                            checked={formData.type === '可疑'} 
-                                            onChange={() => handleBasicChange('type', '可疑')}
-                                            className="accent-blue-600"
-                                        />
-                                        <span className="text-sm text-slate-600">可疑监测</span>
-                                    </label>
-                                </div>
-                            </div>
-                        )}
                     </div>
 
                     <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">核心触发阈值 ({formData.thresholdCurrency})</label>
-                            <div className="flex gap-2">
-                                <input 
-                                    type="number" 
-                                    value={formData.threshold}
-                                    onChange={(e) => handleBasicChange('threshold', Number(e.target.value))}
-                                    className="flex-1 px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none font-mono"
-                                />
-                                <select 
-                                    value={formData.thresholdCurrency}
-                                    onChange={(e) => handleBasicChange('thresholdCurrency', e.target.value)}
-                                    className="px-3 py-2 border border-slate-300 rounded-md outline-none text-sm bg-slate-50"
-                                >
-                                    <option value="CNY">CNY</option>
-                                    <option value="USD">USD</option>
-                                    <option value="EUR">EUR</option>
-                                    <option value="COUNT">次数</option>
-                                </select>
+                        {/* Conditional Logic based on Tech Type */}
+                        {formData.techType === '规则' && (
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">触发阈值 ({formData.thresholdCurrency})</label>
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="number" 
+                                        value={formData.threshold}
+                                        onChange={(e) => handleBasicChange('threshold', Number(e.target.value))}
+                                        className="flex-1 px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none font-mono"
+                                    />
+                                    <select 
+                                        value={formData.thresholdCurrency}
+                                        onChange={(e) => handleBasicChange('thresholdCurrency', e.target.value)}
+                                        className="px-3 py-2 border border-slate-300 rounded-md outline-none text-sm bg-slate-50"
+                                    >
+                                        <option value="CNY">CNY</option>
+                                        <option value="USD">USD</option>
+                                        <option value="COUNT">次数</option>
+                                    </select>
+                                </div>
                             </div>
-                            <input 
-                                type="range" 
-                                min="0" 
-                                max={formData.threshold * 2 || 1000000} 
-                                value={formData.threshold}
-                                onChange={(e) => handleBasicChange('threshold', Number(e.target.value))}
-                                className="w-full mt-2 accent-blue-600"
-                            />
-                        </div>
+                        )}
+
+                        {formData.techType === '机器学习' && (
+                            <>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">算法模型</label>
+                                    <select 
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                                        value={formData.parameters['算法'] || ''}
+                                        onChange={(e) => handleParamChange('算法', e.target.value)}
+                                    >
+                                        <option value="">请选择...</option>
+                                        <option value="XGBoost v1.7">XGBoost v1.7 (Gradient Boosting)</option>
+                                        <option value="Random Forest">Random Forest (随机森林)</option>
+                                        <option value="Isolation Forest">Isolation Forest (异常检测)</option>
+                                        <option value="Neural Network">Deep Neural Network (深度学习)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">判别阈值 (Probability Score &gt; X)</label>
+                                    <div className="flex items-center gap-4">
+                                        <input 
+                                            type="range" 
+                                            min="0" 
+                                            max="100" 
+                                            value={formData.threshold}
+                                            onChange={(e) => handleBasicChange('threshold', Number(e.target.value))}
+                                            className="flex-1 accent-purple-600"
+                                        />
+                                        <span className="font-mono font-bold text-slate-700 w-10">{formData.threshold}%</span>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
+                        {formData.techType === '图谱' && (
+                            <>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">图计算算法</label>
+                                    <select 
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                                        value={formData.parameters['图算法'] || ''}
+                                        onChange={(e) => handleParamChange('图算法', e.target.value)}
+                                    >
+                                        <option value="">请选择...</option>
+                                        <option value="Louvain Community Detection">Louvain (社区发现)</option>
+                                        <option value="PageRank">PageRank (节点重要性)</option>
+                                        <option value="Connected Components">Connected Components (连通分量)</option>
+                                        <option value="Cycle Detection">Cycle Detection (环路检测)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">最大遍历深度 (Hops)</label>
+                                    <input 
+                                        type="number" 
+                                        value={formData.parameters['最大跳数'] || 3}
+                                        onChange={(e) => handleParamChange('最大跳数', Number(e.target.value))}
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-orange-500 outline-none font-mono"
+                                    />
+                                </div>
+                            </>
+                        )}
 
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -244,7 +296,7 @@ export const ModelConfigModal: React.FC<ModelConfigModalProps> = ({ model, onClo
                                     max="100" 
                                     value={formData.riskScoreWeight}
                                     onChange={(e) => handleBasicChange('riskScoreWeight', Number(e.target.value))}
-                                    className="flex-1 accent-amber-500"
+                                    className="flex-1 accent-slate-600"
                                 />
                                 <span className="font-mono font-bold text-slate-700 w-10">{formData.riskScoreWeight}</span>
                             </div>
@@ -252,7 +304,20 @@ export const ModelConfigModal: React.FC<ModelConfigModalProps> = ({ model, onClo
                     </div>
 
                     <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
-                        <label className="block text-sm font-medium text-slate-700 mb-1">模型描述说明</label>
+                        <div className="flex justify-between items-center mb-2">
+                            <label className="block text-sm font-medium text-slate-700">模型描述说明</label>
+                            <div className="flex items-center gap-3">
+                                <span className={`text-sm font-medium ${formData.isEnabled ? 'text-green-600' : 'text-slate-500'}`}>
+                                    {formData.isEnabled ? '已启用' : '已停用'}
+                                </span>
+                                <button 
+                                    onClick={() => handleBasicChange('isEnabled', !formData.isEnabled)}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formData.isEnabled ? 'bg-green-500' : 'bg-slate-300'}`}
+                                >
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.isEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                                </button>
+                            </div>
+                        </div>
                         <textarea 
                             value={formData.description}
                             onChange={(e) => handleBasicChange('description', e.target.value)}
@@ -264,7 +329,7 @@ export const ModelConfigModal: React.FC<ModelConfigModalProps> = ({ model, onClo
                 </div>
             )}
 
-            {/* Parameters Tab (Same as before) */}
+            {/* Parameters Tab (Standard Key-Value) */}
             {activeTab === 'params' && (
                 <div className="space-y-4 animate-in fade-in duration-300">
                     <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">

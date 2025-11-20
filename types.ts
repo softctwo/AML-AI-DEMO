@@ -105,10 +105,13 @@ export interface Transaction {
   aiFeedback?: AiFeedback;
 }
 
+export type ModelTechType = '规则' | '机器学习' | '图谱';
+
 export interface MonitoringModel {
   id: string;
   name: string;
   type: '大额' | '可疑';
+  techType: ModelTechType; // New field
   description: string;
   threshold: number;
   thresholdCurrency: string;
