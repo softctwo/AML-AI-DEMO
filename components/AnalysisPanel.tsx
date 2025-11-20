@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { X, Bot, CheckCircle, XCircle, Send, FileJson, Loader2, ThumbsUp, ThumbsDown, MessageSquare, ArrowRight, User, Building2, Sparkles } from 'lucide-react';
+import { X, Bot, CheckCircle, XCircle, Send, FileJson, Loader2, ThumbsUp, ThumbsDown, MessageSquare, ArrowRight, User, Building2, Sparkles, Globe, ShieldAlert } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Transaction, ReportStatus, AiFeedback, Customer } from '../types';
 import { analyzeTransaction, generateReportXml } from '../services/geminiService';
@@ -23,29 +23,40 @@ const CustomerDetailCard = ({ role, customer }: { role: string, customer: Custom
 
     return (
         <div className={`flex-1 p-3 rounded-lg border ${borderColor} ${bgColor} relative`}>
-            <div className="flex justify-between items-center mb-2">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{role}</span>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${badgeClass}`}>
+            <div className="flex justify-between items-start mb-3">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">{role}</span>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 border border-transparent ${badgeClass}`}>
+                    <ShieldAlert size={10} />
                     {customer.riskRating}
                 </span>
             </div>
+            
             <div className="flex items-start gap-3">
-                <div className={`p-2 rounded-full ${isHigh ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-500'}`}>
+                <div className={`p-2 rounded-full mt-0.5 shrink-0 ${isHigh ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-500'}`}>
                     {customer.type === '企业' ? <Building2 size={16} /> : <User size={16} />}
                 </div>
-                <div>
-                    <h4 className="font-bold text-sm text-slate-800 leading-tight mb-0.5">{customer.name}</h4>
-                    <p className="text-xs text-slate-500 mb-2">{customer.country} · {customer.id}</p>
+                
+                <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-sm text-slate-800 leading-tight mb-1 truncate" title={customer.name}>{customer.name}</h4>
                     
-                    <div className="space-y-1">
-                         <div className="flex gap-2 text-xs">
-                            <span className="text-slate-400 shrink-0">证件:</span>
-                            <span className="text-slate-600 font-mono truncate max-w-[100px]" title={customer.idNumber}>{customer.idNumber}</span>
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                        <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-white/60 border border-slate-200/60 rounded text-slate-600">
+                            <Globe size={10} /> {customer.country}
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-white/60 border border-slate-200/60 rounded text-slate-600 font-mono">
+                             ID: {customer.id}
+                        </span>
+                    </div>
+
+                    <div className="space-y-1 pt-2 border-t border-slate-200/50">
+                         <div className="flex justify-between items-center text-xs">
+                            <span className="text-slate-400 shrink-0">证件号</span>
+                            <span className="text-slate-600 font-mono truncate max-w-[80px]" title={customer.idNumber}>{customer.idNumber}</span>
                          </div>
                          {customer.industry && (
-                            <div className="flex gap-2 text-xs">
-                                <span className="text-slate-400 shrink-0">行业:</span>
-                                <span className="text-slate-600 truncate max-w-[100px]" title={customer.industry}>{customer.industry}</span>
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="text-slate-400 shrink-0">行业</span>
+                                <span className="text-slate-600 truncate max-w-[80px]" title={customer.industry}>{customer.industry}</span>
                             </div>
                          )}
                     </div>

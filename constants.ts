@@ -1,5 +1,5 @@
 
-import { Transaction, TransactionType, ReportStatus, RiskLevel, Customer, Account, MonitoringModel, RiskRatingModel, SystemUser, SystemLog } from './types';
+import { Transaction, TransactionType, ReportStatus, RiskLevel, Customer, Account, MonitoringModel, RiskRatingModel, SystemUser, SystemLog, RegulatoryReport } from './types';
 
 // 模拟客户数据 (增强版)
 export const MOCK_CUSTOMERS: Customer[] = [
@@ -331,6 +331,17 @@ export const MOCK_USERS: SystemUser[] = [
   { id: 'U003', username: 'zhangsan', role: '分析员', department: '反洗钱中心', lastLogin: '2023-10-25 09:15', status: '启用', permissions: ['ALERT_HANDLE', 'DATA_QUERY'] }
 ];
 
+export const AVAILABLE_PERMISSIONS = [
+    { key: 'ALL', label: '系统超级管理员' },
+    { key: 'REVIEW', label: '预警复核权限' },
+    { key: 'REPORT_SUBMIT', label: '监管报送权限' },
+    { key: 'MODEL_VIEW', label: '模型查看权限' },
+    { key: 'MODEL_EDIT', label: '模型配置权限' },
+    { key: 'ALERT_HANDLE', label: '预警处理权限' },
+    { key: 'DATA_QUERY', label: '数据查询权限' },
+    { key: 'USER_MGMT', label: '用户管理权限' }
+];
+
 // 模拟系统日志
 export const MOCK_SYSTEM_LOGS: SystemLog[] = [
     { id: 'LOG-001', timestamp: '2023-10-25 10:15:22', operator: 'lihua', module: '预警处理', action: '复核通过', details: '复核交易 TRX-2023-001，确认上报', ip: '10.20.1.5' },
@@ -338,6 +349,69 @@ export const MOCK_SYSTEM_LOGS: SystemLog[] = [
     { id: 'LOG-003', timestamp: '2023-10-25 09:45:11', operator: 'zhangsan', module: '数据查询', action: '查询客户', details: '查询客户 C004 详情及交易记录', ip: '10.20.3.8' },
     { id: 'LOG-004', timestamp: '2023-10-25 09:30:00', operator: 'SYSTEM', module: '批量任务', action: '跑批结束', details: '完成 T-1 日交易数据跑批，生成预警 158 条', ip: 'localhost' },
     { id: 'LOG-005', timestamp: '2023-10-25 09:00:22', operator: 'lihua', module: '登录', action: '系统登录', details: '登录成功', ip: '10.20.1.5' },
+];
+
+export const MOCK_REPORTS: RegulatoryReport[] = [
+  {
+    id: 'RPT-20231024-001',
+    fileName: 'N_STR_20231024_001.XML',
+    reportDate: '2023-10-24 10:00:00',
+    type: '可疑交易报告',
+    transactionCount: 1,
+    status: '校验通过',
+    feedbackFileName: 'CS_N_STR_20231024_001.REP',
+    feedbackTime: '2023-10-24 10:05:23',
+    feedbackContent: `<?xml version="1.0" encoding="UTF-8"?>
+<Receipt>
+    <Header>
+        <MesgID>CS_N_STR_20231024_001</MesgID>
+        <MesgCreDtTm>2023-10-24T10:05:23</MesgCreDtTm>
+    </Header>
+    <Status>
+        <Code>ACK</Code>
+        <Detail>Successfully Validated</Detail>
+    </Status>
+    <OriginalMessage>
+        <FileName>N_STR_20231024_001.XML</FileName>
+        <ProcessCode>0000</ProcessCode>
+    </OriginalMessage>
+</Receipt>`
+  },
+  {
+    id: 'RPT-20231024-002',
+    fileName: 'N_LCTR_20231024_002.XML',
+    reportDate: '2023-10-24 12:00:00',
+    type: '大额交易报告',
+    transactionCount: 120,
+    status: '上传成功',
+    feedbackFileName: '',
+    feedbackContent: '',
+    feedbackTime: ''
+  },
+  {
+    id: 'RPT-20231024-003',
+    fileName: 'N_LCTR_20231024_003.XML',
+    reportDate: '2023-10-24 14:30:00',
+    type: '大额交易报告',
+    transactionCount: 15,
+    status: '校验失败',
+    feedbackFileName: 'CS_N_LCTR_20231024_003.REP',
+    feedbackTime: '2023-10-24 14:32:11',
+    feedbackContent: `<?xml version="1.0" encoding="UTF-8"?>
+<Receipt>
+    <Header>
+        <MesgID>CS_N_LCTR_20231024_003</MesgID>
+    </Header>
+    <Status>
+        <Code>NACK</Code>
+        <Detail>Schema Validation Error</Detail>
+    </Status>
+    <Error>
+        <Field>Transaction/Amount</Field>
+        <Description>Invalid currency code 'RMB', expected 'CNY'</Description>
+    </Error>
+</Receipt>`
+  }
 ];
 
 export const STAT_DATA: any[] = [

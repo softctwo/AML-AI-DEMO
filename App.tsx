@@ -7,10 +7,12 @@ import { ModelConfigModal } from './components/ModelConfigModal';
 import { CustomerDetailModal } from './components/CustomerDetailModal';
 import { TransactionDetailModal } from './components/TransactionDetailModal';
 import { RiskModelConfigModal } from './components/RiskModelConfigModal';
-import { MOCK_TRANSACTIONS, STAT_DATA, MOCK_CUSTOMERS, MOCK_ACCOUNTS, MOCK_MODELS, MOCK_RISK_MODELS, MOCK_USERS, MOCK_SYSTEM_LOGS, CUSTOMER_TYPE_DATA, RISK_DIST_DATA, TRX_VOLUME_DATA } from './constants';
-import { Transaction, ReportStatus, TransactionType, MonitoringModel, RiskRatingModel, AiFeedback, Customer, RiskLevel, SystemUser } from './types';
+import { ReportDetailModal } from './components/ReportDetailModal';
+import { UserEditModal } from './components/UserEditModal';
+import { MOCK_TRANSACTIONS, STAT_DATA, MOCK_CUSTOMERS, MOCK_ACCOUNTS, MOCK_MODELS, MOCK_RISK_MODELS, MOCK_USERS, MOCK_SYSTEM_LOGS, CUSTOMER_TYPE_DATA, RISK_DIST_DATA, TRX_VOLUME_DATA, MOCK_REPORTS } from './constants';
+import { Transaction, ReportStatus, TransactionType, MonitoringModel, RiskRatingModel, AiFeedback, Customer, RiskLevel, SystemUser, RegulatoryReport } from './types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
-import { AlertOctagon, Banknote, CheckCircle2, Clock, Search, Filter, Plus, User, Building2, FileSearch, Settings2, Globe, AlertTriangle, Send, Bot, ListTodo, ArrowRightLeft, ShieldCheck, RefreshCw } from 'lucide-react';
+import { AlertOctagon, Banknote, CheckCircle2, Clock, Search, Filter, Plus, User, Building2, FileSearch, Settings2, Globe, AlertTriangle, Send, Bot, ListTodo, ArrowRightLeft, ShieldCheck, RefreshCw, FileCode } from 'lucide-react';
 
 const COLORS = ['#3b82f6', '#f59e0b', '#ef4444', '#10b981'];
 
@@ -31,8 +33,13 @@ function App() {
   const [riskModels, setRiskModels] = useState<RiskRatingModel[]>(MOCK_RISK_MODELS);
   const [reAssessing, setReAssessing] = useState<string | null>(null); // Customer ID being assessed
   
+  // Report State
+  const [reports, setReports] = useState<RegulatoryReport[]>(MOCK_REPORTS);
+  const [selectedReport, setSelectedReport] = useState<RegulatoryReport | null>(null);
+
   // System Management State
   const [systemTab, setSystemTab] = useState<'users' | 'logs'>('users');
+  const [users, setUsers] = useState<SystemUser[]>(MOCK_USERS);
   
   // Modals
   const [editingModel, setEditingModel] = useState<MonitoringModel | null>(null);
@@ -40,6 +47,8 @@ function App() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null);
   const [editingRiskModel, setEditingRiskModel] = useState<RiskRatingModel | null>(null);
+  const [editingUser, setEditingUser] = useState<SystemUser | null>(null);
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
 
   // Alert View State
   const [alertTab, setAlertTab] = useState<'large' | 'suspicious'>('large');
@@ -76,6 +85,16 @@ function App() {
   const handleSaveRiskModel = (updatedModel: RiskRatingModel) => {
       setRiskModels(prev => prev.map(m => m.id === updatedModel.id ? updatedModel : m));
       setEditingRiskModel(null);
+  };
+
+  const handleSaveUser = (updatedUser: SystemUser) => {
+      if (isCreatingUser) {
+          setUsers(prev => [...prev, updatedUser]);
+      } else {
+          setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+      }
+      setEditingUser(null);
+      setIsCreatingUser(false);
   };
 
   // Simulate Re-assessment
@@ -709,7 +728,7 @@ function App() {
                 </div>
                 <div className="p-4 border border-slate-200 rounded-lg">
                     <h4 className="font-bold text-slate-700 mb-1">校验失败</h4>
-                    <p className="text-2xl font-bold text-red-500">0 <span className="text-sm text-slate-400 font-normal">份</span></p>
+                    <p className="text-2xl font-bold text-red-500">1 <span className="text-sm text-slate-400 font-normal">份</span></p>
                 </div>
             </div>
         </div>
@@ -724,18 +743,33 @@ function App() {
                         <th className="px-6 py-3 text-left">类型</th>
                         <th className="px-6 py-3 text-left">包含交易数</th>
                         <th className="px-6 py-3 text-left">状态</th>
-                        <th className="px-6 py-3 text-left">回执反馈</th>
+                        <th className="px-6 py-3 text-left">操作</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                    {[1,2,3].map(i => (
-                        <tr key={i} className="hover:bg-slate-50">
-                            <td className="px-6 py-3 font-mono text-blue-600">N_STR_20231024_00{i}.XML</td>
-                            <td className="px-6 py-3 text-slate-500">2023-10-24 10:00:00</td>
-                            <td className="px-6 py-3">可疑交易报告</td>
-                            <td className="px-6 py-3">1</td>
-                            <td className="px-6 py-3"><span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded text-xs">上传成功</span></td>
-                            <td className="px-6 py-3 text-slate-500">CS_20231024_00{i}.REP (校验通过)</td>
+                    {reports.map(report => (
+                        <tr key={report.id} className="hover:bg-slate-50">
+                            <td className="px-6 py-3 font-mono text-blue-600">{report.fileName}</td>
+                            <td className="px-6 py-3 text-slate-500">{report.reportDate}</td>
+                            <td className="px-6 py-3">{report.type}</td>
+                            <td className="px-6 py-3">{report.transactionCount}</td>
+                            <td className="px-6 py-3">
+                                <span className={`px-2 py-0.5 rounded text-xs ${
+                                    report.status === '校验通过' ? 'text-emerald-600 bg-emerald-50' :
+                                    report.status === '校验失败' ? 'text-red-600 bg-red-50' : 
+                                    'text-blue-600 bg-blue-50'
+                                }`}>
+                                    {report.status}
+                                </span>
+                            </td>
+                            <td className="px-6 py-3">
+                                <button 
+                                    onClick={() => setSelectedReport(report)}
+                                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                                >
+                                    查看回执
+                                </button>
+                            </td>
                         </tr>
                     ))}
                 </tbody>
@@ -765,7 +799,12 @@ function App() {
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                   <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
                       <h3 className="font-bold text-slate-800">系统用户列表</h3>
-                      <button className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 transition-colors">添加用户</button>
+                      <button 
+                        onClick={() => { setEditingUser(null); setIsCreatingUser(true); }}
+                        className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 transition-colors flex items-center gap-1"
+                      >
+                          <Plus size={14} /> 添加用户
+                      </button>
                   </div>
                   <table className="w-full text-sm text-left">
                       <thead className="bg-slate-50 text-slate-500">
@@ -780,7 +819,7 @@ function App() {
                           </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                          {MOCK_USERS.map(u => (
+                          {users.map(u => (
                               <tr key={u.id} className="hover:bg-slate-50">
                                   <td className="px-6 py-3 font-medium text-slate-800">{u.username}</td>
                                   <td className="px-6 py-3">
@@ -791,11 +830,18 @@ function App() {
                                   <td className="px-6 py-3 text-slate-600">{u.department}</td>
                                   <td className="px-6 py-3 text-slate-500">{u.lastLogin}</td>
                                   <td className="px-6 py-3">
-                                      <span className="text-emerald-600 flex items-center gap-1 text-xs font-bold"><CheckCircle2 size={12} /> {u.status}</span>
+                                      <span className={`${u.status === '启用' ? 'text-emerald-600' : 'text-slate-400'} flex items-center gap-1 text-xs font-bold`}>
+                                          <CheckCircle2 size={12} /> {u.status}
+                                      </span>
                                   </td>
-                                  <td className="px-6 py-3 text-xs text-slate-400 max-w-[150px] truncate">{u.permissions?.join(', ')}</td>
+                                  <td className="px-6 py-3 text-xs text-slate-400 max-w-[150px] truncate" title={u.permissions?.join(', ')}>{u.permissions?.join(', ')}</td>
                                   <td className="px-6 py-3">
-                                      <button className="text-blue-600 hover:underline mr-3">编辑</button>
+                                      <button 
+                                        onClick={() => { setEditingUser(u); setIsCreatingUser(false); }}
+                                        className="text-blue-600 hover:underline mr-3"
+                                      >
+                                          编辑
+                                      </button>
                                       <button className="text-slate-400 hover:text-red-600">重置密码</button>
                                   </td>
                               </tr>
@@ -917,6 +963,22 @@ function App() {
             onClose={() => setEditingRiskModel(null)}
             onSave={handleSaveRiskModel}
           />
+      )}
+
+      {selectedReport && (
+        <ReportDetailModal 
+          report={selectedReport}
+          onClose={() => setSelectedReport(null)}
+        />
+      )}
+
+      {(editingUser || isCreatingUser) && (
+        <UserEditModal 
+          user={editingUser}
+          isCreating={isCreatingUser}
+          onClose={() => { setEditingUser(null); setIsCreatingUser(false); }}
+          onSave={handleSaveUser}
+        />
       )}
     </div>
   );

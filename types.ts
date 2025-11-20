@@ -159,3 +159,15 @@ export interface DailyStats {
   largeValueCount: number;
   suspiciousCount: number;
 }
+
+export interface RegulatoryReport {
+  id: string;
+  fileName: string;
+  reportDate: string;
+  type: '可疑交易报告' | '大额交易报告';
+  transactionCount: number;
+  status: '上传成功' | '上传失败' | '校验通过' | '校验失败';
+  feedbackFileName?: string;
+  feedbackContent?: string; // XML string
+  feedbackTime?: string;
+}
