@@ -15,6 +15,7 @@ import { BeneficialOwnerModule } from './components/BeneficialOwnerModule';
 import { CddModule } from './components/CddModule';
 import { CopilotWidget } from './components/CopilotWidget'; // Scheme B
 import { CaseInvestigationModule } from './components/CaseInvestigationModule'; // Scheme C
+import { RiskHeatmap } from './components/RiskHeatmap'; // Phase 4
 import { MOCK_TRANSACTIONS, STAT_DATA, MOCK_CUSTOMERS, MOCK_ACCOUNTS, MOCK_MODELS, MOCK_RISK_MODELS, MOCK_USERS, MOCK_SYSTEM_LOGS, RISK_DIST_DATA, TRX_VOLUME_DATA, MOCK_REPORTS, MOCK_CDD_CASES, MOCK_INSPECTION_ITEMS, MOCK_MONITORED_ENTITIES, MOCK_INVESTIGATION_CASES } from './constants';
 import { Transaction, ReportStatus, TransactionType, MonitoringModel, RiskRatingModel, AiFeedback, Customer, RiskLevel, SystemUser, RegulatoryReport, InspectionStatus, CddStatus } from './types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell } from 'recharts';
@@ -145,17 +146,6 @@ function App() {
     // Risk Logic
     const highRiskCustomers = MOCK_CUSTOMERS.filter(c => c.riskRating === RiskLevel.CRITICAL || c.riskRating === RiskLevel.HIGH).length;
     
-    // UBO Logic
-    let pendingUboCount = 0;
-    MOCK_CUSTOMERS.forEach(c => {
-        if(c.beneficialOwners) {
-            pendingUboCount += c.beneficialOwners.filter(u => u.status === '待核实').length;
-        }
-    });
-    
-    // Screening Logic
-    const monitoredEntityCount = MOCK_MONITORED_ENTITIES.length;
-    
     // Investigation Cases Logic
     const openCasesCount = MOCK_INVESTIGATION_CASES.filter(c => c.status === '调查中').length;
 
@@ -200,118 +190,74 @@ function App() {
           />
         </div>
 
-        {/* Row 2: Charts & Trends */}
+        {/* Row 2: Heatmap & Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Risk Distribution */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-              <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <TrendingUp size={18} className="text-blue-500"/> 全行客户风险分布
-              </h3>
-              <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={RISK_DIST_DATA} layout="vertical">
-                          <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                          <XAxis type="number" hide />
-                          <YAxis dataKey="name" type="category" width={60} tick={{fontSize: 12}} />
-                          <Tooltip cursor={{fill: 'transparent'}} />
-                          <Bar dataKey="value" barSize={20} radius={[0, 4, 4, 0]}>
-                              {RISK_DIST_DATA.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={entry.color} />
-                              ))}
-                          </Bar>
-                      </BarChart>
-                  </ResponsiveContainer>
-              </div>
-          </div>
+            {/* Phase 4: Geographic Risk Heatmap */}
+            <div className="lg:col-span-2 bg-white p-1 rounded-xl shadow-sm border border-slate-200 h-[400px]">
+                <RiskHeatmap />
+            </div>
 
-          {/* Transaction Flow */}
-          <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-              <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <ArrowRightLeft size={18} className="text-blue-500"/> 交易监测趋势 (7日)
-              </h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={TRX_VOLUME_DATA}>
-                      <defs>
-                          <linearGradient id="colorLarge" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                          </linearGradient>
-                          <linearGradient id="colorSuspicious" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
-                              <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
-                          </linearGradient>
-                      </defs>
-                      <XAxis dataKey="date" axisLine={false} tickLine={false} />
-                      <YAxis axisLine={false} tickLine={false} />
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <Tooltip formatter={(value: number) => [`${value}万元`, '金额']} />
-                      <Area type="monotone" dataKey="largeValue" name="大额交易金额" stackId="1" stroke="#3b82f6" fillOpacity={1} fill="url(#colorLarge)" />
-                      <Area type="monotone" dataKey="suspicious" name="可疑交易金额" stackId="1" stroke="#ef4444" fillOpacity={1} fill="url(#colorSuspicious)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-          </div>
+            {/* Risk Distribution */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-[400px] flex flex-col">
+                <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <TrendingUp size={18} className="text-blue-500"/> 全行客户风险分布
+                </h3>
+                <div className="flex-1">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={RISK_DIST_DATA} layout="vertical">
+                            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                            <XAxis type="number" hide />
+                            <YAxis dataKey="name" type="category" width={60} tick={{fontSize: 12}} />
+                            <Tooltip cursor={{fill: 'transparent'}} />
+                            <Bar dataKey="value" barSize={20} radius={[0, 4, 4, 0]}>
+                                {RISK_DIST_DATA.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
         </div>
 
-        {/* Row 3: Module Summaries */}
+        {/* Row 3: Trends & Summaries */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Screening Summary */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-             <div className="flex justify-between items-center mb-4">
-                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                    <ScanFace size={18} className="text-blue-500"/> 名单筛查概况
-                 </h3>
-                 <span className="text-xs bg-slate-100 px-2 py-1 rounded-full text-slate-500">监控中: {monitoredEntityCount}</span>
-             </div>
-             <div className="space-y-3">
-                 <div className="p-3 bg-red-50 rounded-lg border border-red-100 flex justify-between items-center">
-                     <span className="text-sm text-red-700 font-medium flex items-center gap-2"><AlertOctagon size={14}/> 政治公众人物 (PEP)</span>
-                     <span className="font-bold text-red-700">2 命中</span>
-                 </div>
-                 <div className="p-3 bg-amber-50 rounded-lg border border-amber-100 flex justify-between items-center">
-                     <span className="text-sm text-amber-700 font-medium flex items-center gap-2"><Globe size={14}/> 负面媒体报道</span>
-                     <span className="font-bold text-amber-700">5 命中</span>
-                 </div>
-                 <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 flex justify-between items-center">
-                     <span className="text-sm text-slate-700 font-medium flex items-center gap-2"><CheckCircle2 size={14}/> 制裁名单 (Sanctions)</span>
-                     <span className="font-bold text-green-600">0 命中</span>
-                 </div>
-             </div>
-          </div>
-
-          {/* Report Status */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-             <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <FileText size={18} className="text-blue-500"/> 监管报送状态 (今日)
-             </h3>
-             <div className="flex items-center gap-4 mb-6">
-                 <div className="flex-1 text-center p-2 border border-slate-100 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">12</div>
-                    <div className="text-xs text-slate-500">已上报</div>
-                 </div>
-                 <div className="flex-1 text-center p-2 border border-slate-100 rounded-lg">
-                    <div className="text-2xl font-bold text-emerald-600">11</div>
-                    <div className="text-xs text-slate-500">校验通过</div>
-                 </div>
-                 <div className="flex-1 text-center p-2 border border-slate-100 rounded-lg">
-                    <div className="text-2xl font-bold text-red-500">1</div>
-                    <div className="text-xs text-slate-500">校验失败</div>
-                 </div>
-             </div>
-             <div className="text-xs text-slate-400 flex items-center gap-1">
-                 <Clock size={12} /> 最近同步: 10:35:00 (系统自动)
-             </div>
-          </div>
+            
+             {/* Transaction Flow */}
+            <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <ArrowRightLeft size={18} className="text-blue-500"/> 交易监测趋势 (7日)
+                </h3>
+                <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={TRX_VOLUME_DATA}>
+                        <defs>
+                            <linearGradient id="colorLarge" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                            </linearGradient>
+                            <linearGradient id="colorSuspicious" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
+                                <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                            </linearGradient>
+                        </defs>
+                        <XAxis dataKey="date" axisLine={false} tickLine={false} />
+                        <YAxis axisLine={false} tickLine={false} />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <Tooltip formatter={(value: number) => [`${value}万元`, '金额']} />
+                        <Area type="monotone" dataKey="largeValue" name="大额交易金额" stackId="1" stroke="#3b82f6" fillOpacity={1} fill="url(#colorLarge)" />
+                        <Area type="monotone" dataKey="suspicious" name="可疑交易金额" stackId="1" stroke="#ef4444" fillOpacity={1} fill="url(#colorSuspicious)" />
+                    </AreaChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
 
           {/* Alert Trend (Mini) */}
           <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
             <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                 <AlertTriangle size={18} className="text-blue-500"/> 近7日预警量
             </h3>
-            <div className="h-40">
+            <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={STAT_DATA}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -323,7 +269,6 @@ function App() {
               </ResponsiveContainer>
             </div>
           </div>
-
         </div>
       </div>
     );

@@ -1,6 +1,6 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { Transaction } from "../types";
+import { Transaction, InvestigationCase } from "../types";
 
 // Ensure API key is present
 const API_KEY = process.env.API_KEY || '';
@@ -92,4 +92,44 @@ export const generateReportXml = (transaction: Transaction, rationale: string): 
         <![CDATA[${rationale.slice(0, 1000)}...]]>
     </AnalysisNarrative>
 </STRReport>`;
+};
+
+// Phase 4: Full Case Report Drafting
+export const draftInvestigationReport = async (caseInfo: InvestigationCase): Promise<string> => {
+  if (!aiClient) {
+    return "错误: 未配置 Gemini API Key。";
+  }
+
+  const prompt = `
+    **角色设定**: 您是银行反洗钱中心的高级调查员。
+    
+    **任务**: 请根据以下案件信息，撰写一份正式的《反洗钱调查结案报告》(Suspicious Activity Report Narrative)。
+    
+    **案件背景**:
+    - 案件标题: ${caseInfo.title}
+    - 嫌疑主体: ${caseInfo.primarySubjectName}
+    - 风险等级: ${caseInfo.severity}
+    - 案件描述: ${caseInfo.description}
+    - 涉及预警ID: ${caseInfo.linkedAlerts.join(', ')}
+    
+    **撰写要求**:
+    1. 语气严肃、客观、专业。
+    2. 结构清晰，必须包含以下部分：
+       - **一、调查事由**: 简述触发调查的原因。
+       - **二、主体情况**: 描述客户基本信息及业务背景。
+       - **三、可疑交易分析**: 详细描述资金流向、交易模式（如快进快出、过渡账户等）。
+       - **四、调查结论**: 明确是否涉嫌洗钱及具体上游犯罪类型猜测。
+       - **五、下一步措施**: 建议上报STR、调整风险等级或限制账户功能。
+    3. 字数要求：800字左右。
+  `;
+
+  try {
+    const response = await aiClient.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+    return response.text || "无法生成报告草稿。";
+  } catch (error) {
+    return "撰写服务暂时不可用。";
+  }
 };

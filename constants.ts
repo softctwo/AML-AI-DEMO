@@ -21,7 +21,9 @@ export const MOCK_CUSTOMERS: Customer[] = [
     ],
     negativeNews: [],
     riskHistory: [
-        { date: '2023-01-15', previousLevel: RiskLevel.MEDIUM, newLevel: RiskLevel.LOW, reason: '股权结构变更，风险降低', operator: 'System' }
+        { date: '2023-01-15', previousLevel: RiskLevel.MEDIUM, newLevel: RiskLevel.LOW, reason: '股权结构变更，风险降低', operator: 'System' },
+        { date: '2022-06-10', previousLevel: RiskLevel.LOW, newLevel: RiskLevel.MEDIUM, reason: '季度交易量激增', operator: 'System' },
+        { date: '2020-05-12', previousLevel: RiskLevel.LOW, newLevel: RiskLevel.LOW, reason: '客户建立业务关系', operator: 'System' }
     ]
   },
   { 
@@ -599,4 +601,15 @@ export const AVAILABLE_PERMISSIONS = [
     { key: 'REVIEW', label: '复核审批 (CDD/大额审批)' },
     { key: 'CASE_MGMT', label: '案件调查管理' },
     { key: 'ALL', label: '超级管理员权限' }
+];
+
+// Phase 4: Heatmap Data
+export const GEO_RISK_DATA = [
+    { id: 'CN', name: 'China', risk: 20, value: 1000 },
+    { id: 'US', name: 'USA', risk: 10, value: 500 },
+    { id: 'RU', name: 'Russia', risk: 80, value: 100 },
+    { id: 'KY', name: 'Cayman Islands', risk: 90, value: 300 }, // High risk offshore
+    { id: 'VG', name: 'British Virgin Islands', risk: 85, value: 250 },
+    { id: 'SG', name: 'Singapore', risk: 15, value: 800 },
+    { id: 'PH', name: 'Philippines', risk: 70, value: 400 }, // Gambling risk
 ];

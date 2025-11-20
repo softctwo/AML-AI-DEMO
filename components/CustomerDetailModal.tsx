@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Customer, RiskLevel, TransactionType } from '../types';
 import { MOCK_ACCOUNTS, MOCK_TRANSACTIONS } from '../constants';
-import { X, User, Building2, MapPin, Briefcase, Calendar, ShieldAlert, AlertTriangle, History, Globe, Users, LayoutGrid, FileText, Wallet, ArrowRightLeft, ArrowUpRight, ArrowDownLeft, Search } from 'lucide-react';
+import { X, User, Building2, MapPin, Briefcase, Calendar, ShieldAlert, AlertTriangle, History, Globe, Users, LayoutGrid, FileText, Wallet, ArrowRightLeft, ArrowUpRight, ArrowDownLeft, Search, Clock } from 'lucide-react';
 
 interface CustomerDetailModalProps {
   customer: Customer;
@@ -328,6 +328,59 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ custom
             {/* Risk Tab */}
             {activeTab === 'risk' && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
+                    
+                    {/* Phase 4: Risk Timeline */}
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                         <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <Clock size={18} className="text-blue-600" /> 全生命周期风险时间轴
+                        </h3>
+                        <div className="relative border-l-2 border-slate-200 ml-3 space-y-8">
+                             {/* Timeline Event: Risk Change */}
+                             {customer.riskHistory?.map((log, idx) => (
+                                <div key={idx} className="ml-6 relative">
+                                    <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-white border-2 border-amber-500"></div>
+                                    <div className="flex flex-col">
+                                        <span className="text-xs font-bold text-slate-400">{log.date}</span>
+                                        <span className="text-sm font-bold text-slate-800 mt-0.5">风险评级变更</span>
+                                        <div className="mt-2 p-3 bg-slate-50 rounded border border-slate-200 text-sm">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="text-slate-500 text-xs">{log.previousLevel}</span>
+                                                <span className="text-slate-400 text-xs">→</span>
+                                                <span className={`text-xs font-bold ${log.newLevel.includes('高') ? 'text-red-600' : 'text-green-600'}`}>{log.newLevel}</span>
+                                            </div>
+                                            <p className="text-slate-600 text-xs">{log.reason} (操作员: {log.operator})</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            
+                            {/* Timeline Event: Transactions */}
+                            {customerTransactions.length > 0 && (
+                                <div className="ml-6 relative">
+                                    <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-white border-2 border-blue-500"></div>
+                                    <div className="flex flex-col">
+                                        <span className="text-xs font-bold text-slate-400">{customerTransactions[0].date.split(' ')[0]}</span>
+                                        <span className="text-sm font-bold text-slate-800 mt-0.5">最近可疑交易触发</span>
+                                        <div className="mt-2 p-3 bg-blue-50 rounded border border-blue-100 text-sm">
+                                            <p className="text-blue-800 text-xs font-medium">流水号: {customerTransactions[0].id}</p>
+                                            <p className="text-blue-600 text-xs mt-1">{customerTransactions[0].triggerRule}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Timeline Event: Onboarding */}
+                            <div className="ml-6 relative">
+                                <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-white border-2 border-green-500"></div>
+                                <div className="flex flex-col">
+                                    <span className="text-xs font-bold text-slate-400">{customer.regDate || '2020-01-01'}</span>
+                                    <span className="text-sm font-bold text-slate-800 mt-0.5">客户建立业务关系</span>
+                                    <p className="text-xs text-slate-500 mt-1">完成初次身份识别 (KYC) 与准入审核。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Negative News */}
                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                         <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
@@ -357,33 +410,6 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ custom
                                 暂未监测到该客户的负面舆情信息。
                             </div>
                         )}
-                    </div>
-
-                    {/* Risk Assessment History */}
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                        <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                            <History size={18} className="text-blue-500" /> 风险评级变更记录
-                        </h3>
-                        <div className="relative border-l-2 border-slate-200 ml-3 space-y-6">
-                            {customer.riskHistory?.map((log, idx) => (
-                                <div key={idx} className="ml-6 relative">
-                                    <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-white border-2 border-blue-500"></div>
-                                    <div className="flex justify-between items-start">
-                                        <span className="text-sm font-bold text-slate-800">{log.date}</span>
-                                        <span className="text-xs text-slate-400">操作员: {log.operator}</span>
-                                    </div>
-                                    <div className="mt-1 p-3 bg-slate-50 rounded border border-slate-200">
-                                        <div className="flex items-center gap-2 text-sm mb-1">
-                                            <span className="text-slate-500">{log.previousLevel}</span>
-                                            <span className="text-slate-300">→</span>
-                                            <span className="font-bold text-slate-800">{log.newLevel}</span>
-                                        </div>
-                                        <p className="text-xs text-slate-600">{log.reason}</p>
-                                    </div>
-                                </div>
-                            ))}
-                            {!customer.riskHistory && <p className="text-sm text-slate-500 ml-6">暂无历史评级变更记录。</p>}
-                        </div>
                     </div>
                 </div>
             )}

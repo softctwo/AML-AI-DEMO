@@ -1,9 +1,10 @@
 
 import React, { useEffect, useState } from 'react';
-import { X, Bot, CheckCircle, XCircle, Send, FileJson, Loader2, ThumbsUp, ThumbsDown, MessageSquare, ArrowRight, User, Building2, Sparkles, Globe, ShieldAlert, FileText, Info } from 'lucide-react';
+import { X, Bot, CheckCircle, XCircle, Send, FileJson, Loader2, ThumbsUp, ThumbsDown, MessageSquare, ArrowRight, User, Building2, Sparkles, Globe, ShieldAlert, FileText, Info, Edit3 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { Transaction, ReportStatus, AiFeedback, Customer, TransactionType } from '../types';
+import { Transaction, ReportStatus, AiFeedback, Customer, TransactionType, InvestigationCase, CaseStatus } from '../types';
 import { analyzeTransaction, generateReportXml } from '../services/geminiService';
+import { ReportDraftingStudio } from './ReportDraftingStudio';
 
 interface AnalysisPanelProps {
   transaction: Transaction | null;
@@ -76,6 +77,9 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ transaction, onClo
   const [feedbackRating, setFeedbackRating] = useState<'positive' | 'negative' | null>(null);
   const [feedbackComment, setFeedbackComment] = useState('');
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+
+  // Drafting Studio State
+  const [showDraftingStudio, setShowDraftingStudio] = useState(false);
 
   const isLargeValue = transaction?.type === TransactionType.LARGE_VALUE;
 
@@ -166,10 +170,26 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ transaction, onClo
     onFeedback(transaction.id, feedbackData);
     setFeedbackSubmitted(true);
   };
+  
+  // Mock case for drafting studio
+  const getMockCaseForTransaction = (tx: Transaction): InvestigationCase => ({
+      id: `CASE-${Date.now()}`,
+      title: `关于 ${tx.recipient.name} 涉及可疑交易的调查`,
+      primarySubjectId: tx.recipient.id,
+      primarySubjectName: tx.recipient.name,
+      createDate: new Date().toISOString().split('T')[0],
+      status: CaseStatus.OPEN,
+      owner: 'Current User',
+      severity: '高',
+      linkedAlerts: [tx.id],
+      linkedEntities: [tx.recipient.id, tx.sender.id],
+      description: `系统监测到流水号 ${tx.id} 存在异常。触发规则：${tx.triggerRule}。金额：${tx.amount}。AI 初步研判认为具有较高的洗钱风险。`
+  });
 
   if (!transaction) return null;
 
   return (
+    <>
     <div className="fixed inset-y-0 right-0 w-[650px] bg-white shadow-2xl border-l border-slate-200 transform transition-transform duration-300 ease-in-out z-50 flex flex-col">
       {/* Header */}
       <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -183,9 +203,21 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ transaction, onClo
           </h2>
           <p className="text-sm text-slate-500">流水号: {transaction.id}</p>
         </div>
-        <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
-          <X size={20} />
-        </button>
+        <div className="flex gap-2">
+            {/* New Drafting Studio Button */}
+            {!isLargeValue && (
+                <button 
+                    onClick={() => setShowDraftingStudio(true)}
+                    className="p-2 hover:bg-indigo-100 text-indigo-600 rounded-full transition-colors"
+                    title="打开撰写工坊"
+                >
+                    <Edit3 size={20} />
+                </button>
+            )}
+            <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
+            <X size={20} />
+            </button>
+        </div>
       </div>
 
       {/* Scrollable Content */}
@@ -390,5 +422,13 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ transaction, onClo
         )}
       </div>
     </div>
+
+    {showDraftingStudio && transaction && (
+        <ReportDraftingStudio 
+            caseInfo={getMockCaseForTransaction(transaction)} 
+            onClose={() => setShowDraftingStudio(false)} 
+        />
+    )}
+    </>
   );
 };
