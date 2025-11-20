@@ -16,7 +16,7 @@ import { CddModule } from './components/CddModule';
 import { MOCK_TRANSACTIONS, STAT_DATA, MOCK_CUSTOMERS, MOCK_ACCOUNTS, MOCK_MODELS, MOCK_RISK_MODELS, MOCK_USERS, MOCK_SYSTEM_LOGS, RISK_DIST_DATA, TRX_VOLUME_DATA, MOCK_REPORTS, MOCK_CDD_CASES, MOCK_INSPECTION_ITEMS, MOCK_MONITORED_ENTITIES } from './constants';
 import { Transaction, ReportStatus, TransactionType, MonitoringModel, RiskRatingModel, AiFeedback, Customer, RiskLevel, SystemUser, RegulatoryReport, InspectionStatus, CddStatus } from './types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell } from 'recharts';
-import { AlertOctagon, Banknote, CheckCircle2, Clock, Search, Filter, Plus, User, Building2, FileSearch, Settings2, Globe, AlertTriangle, Send, Bot, ArrowRightLeft, ShieldCheck, RefreshCw, FileCheck, ClipboardCheck, ScanFace, TrendingUp, FileText, Settings, Trash2, Users, Edit } from 'lucide-react';
+import { AlertOctagon, Banknote, CheckCircle2, Clock, Search, Filter, Plus, User, Building2, FileSearch, Settings2, Globe, AlertTriangle, Send, Bot, ArrowRightLeft, ShieldCheck, RefreshCw, FileCheck, ClipboardCheck, ScanFace, TrendingUp, FileText, Settings, Trash2, Users, Edit, Shield, FileClock } from 'lucide-react';
 
 function App() {
   const [activeView, setActiveView] = useState('dashboard');
@@ -41,6 +41,7 @@ function App() {
 
   // System Management State
   const [users, setUsers] = useState<SystemUser[]>(MOCK_USERS);
+  const [systemTab, setSystemTab] = useState<'users' | 'logs'>('users');
   
   // Modals
   const [editingModel, setEditingModel] = useState<MonitoringModel | null>(null);
@@ -858,91 +859,114 @@ function App() {
                  <h2 className="text-2xl font-bold text-slate-800">系统管理</h2>
                  <p className="text-sm text-slate-500">用户权限、日志审计与系统参数配置</p>
              </div>
-             <button 
-                onClick={() => { setEditingUser(null); setIsCreatingUser(true); }}
-                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all"
-             >
-                 <Plus size={18} /> 新增用户
-             </button>
-        </div>
-        
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-                <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                    <Users size={18} className="text-blue-600" /> 用户管理
-                </h3>
-            </div>
-            <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50 text-slate-500">
-                    <tr>
-                        <th className="px-6 py-3">用户名</th>
-                        <th className="px-6 py-3">角色</th>
-                        <th className="px-6 py-3">部门</th>
-                        <th className="px-6 py-3">最近登录</th>
-                        <th className="px-6 py-3">状态</th>
-                        <th className="px-6 py-3">操作</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                    {users.map(user => (
-                        <tr key={user.id} className="hover:bg-slate-50">
-                            <td className="px-6 py-3 font-bold text-slate-700">{user.username}</td>
-                            <td className="px-6 py-3">
-                                <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-medium border border-slate-200">
-                                    {user.role}
-                                </span>
-                            </td>
-                            <td className="px-6 py-3 text-slate-600">{user.department}</td>
-                            <td className="px-6 py-3 text-slate-500 font-mono text-xs">{user.lastLogin}</td>
-                            <td className="px-6 py-3">
-                                <span className={`flex items-center gap-1.5 text-xs font-medium ${user.status === '启用' ? 'text-green-600' : 'text-slate-400'}`}>
-                                    <div className={`w-2 h-2 rounded-full ${user.status === '启用' ? 'bg-green-500' : 'bg-slate-300'}`}></div>
-                                    {user.status}
-                                </span>
-                            </td>
-                            <td className="px-6 py-3 flex gap-3">
-                                <button 
-                                    onClick={() => { setEditingUser(user); setIsCreatingUser(false); }}
-                                    className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                                >
-                                    <Edit size={14} /> 编辑
-                                </button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-                <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                    <Settings size={18} className="text-slate-600" /> 系统审计日志 (最近10条)
-                </h3>
-            </div>
-            <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50 text-slate-500">
-                    <tr>
-                        <th className="px-6 py-3">时间</th>
-                        <th className="px-6 py-3">操作员</th>
-                        <th className="px-6 py-3">模块</th>
-                        <th className="px-6 py-3">动作</th>
-                        <th className="px-6 py-3">详情</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                    {MOCK_SYSTEM_LOGS.map(log => (
-                        <tr key={log.id} className="hover:bg-slate-50">
-                            <td className="px-6 py-3 font-mono text-xs text-slate-500">{log.timestamp}</td>
-                            <td className="px-6 py-3 font-medium text-slate-700">{log.operator}</td>
-                            <td className="px-6 py-3 text-slate-600">{log.module}</td>
-                            <td className="px-6 py-3 text-slate-600">{log.action}</td>
-                            <td className="px-6 py-3 text-slate-500 max-w-xs truncate" title={log.details}>{log.details}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+        {/* System Management Tabs */}
+        <div className="bg-white p-2 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2 w-fit">
+            <button 
+                onClick={() => setSystemTab('users')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all ${systemTab === 'users' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}
+            >
+                <Users size={16} /> 用户管理
+            </button>
+            <button 
+                onClick={() => setSystemTab('logs')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all ${systemTab === 'logs' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}
+            >
+                <FileClock size={16} /> 系统审计日志
+            </button>
         </div>
+        
+        {/* Content based on Tab */}
+        {systemTab === 'users' ? (
+             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4">
+                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                        <Shield size={18} className="text-blue-600" /> 用户权限列表
+                    </h3>
+                    <button 
+                        onClick={() => { setEditingUser(null); setIsCreatingUser(true); }}
+                        className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-all text-sm font-medium shadow-sm"
+                    >
+                        <Plus size={16} /> 新增用户
+                    </button>
+                </div>
+                <table className="w-full text-sm text-left">
+                    <thead className="bg-slate-50 text-slate-500">
+                        <tr>
+                            <th className="px-6 py-3">用户名</th>
+                            <th className="px-6 py-3">角色</th>
+                            <th className="px-6 py-3">部门</th>
+                            <th className="px-6 py-3">最近登录</th>
+                            <th className="px-6 py-3">状态</th>
+                            <th className="px-6 py-3">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                        {users.map(user => (
+                            <tr key={user.id} className="hover:bg-slate-50">
+                                <td className="px-6 py-3 font-bold text-slate-700">{user.username}</td>
+                                <td className="px-6 py-3">
+                                    <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-medium border border-slate-200">
+                                        {user.role}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-3 text-slate-600">{user.department}</td>
+                                <td className="px-6 py-3 text-slate-500 font-mono text-xs">{user.lastLogin}</td>
+                                <td className="px-6 py-3">
+                                    <span className={`flex items-center gap-1.5 text-xs font-medium ${user.status === '启用' ? 'text-green-600' : 'text-slate-400'}`}>
+                                        <div className={`w-2 h-2 rounded-full ${user.status === '启用' ? 'bg-green-500' : 'bg-slate-300'}`}></div>
+                                        {user.status}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-3 flex gap-3">
+                                    <button 
+                                        onClick={() => { setEditingUser(user); setIsCreatingUser(false); }}
+                                        className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                    >
+                                        <Edit size={14} /> 编辑
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        ) : (
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4">
+                 <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                        <Settings size={18} className="text-slate-600" /> 操作日志记录 (最近10条)
+                    </h3>
+                    <div className="relative">
+                        <Search className="absolute left-3 top-2 text-slate-400" size={14} />
+                        <input type="text" placeholder="搜索日志..." className="pl-9 pr-3 py-1.5 text-sm border border-slate-200 rounded-md outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                </div>
+                <table className="w-full text-sm text-left">
+                    <thead className="bg-slate-50 text-slate-500">
+                        <tr>
+                            <th className="px-6 py-3">时间</th>
+                            <th className="px-6 py-3">操作员</th>
+                            <th className="px-6 py-3">模块</th>
+                            <th className="px-6 py-3">动作</th>
+                            <th className="px-6 py-3">详情</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                        {MOCK_SYSTEM_LOGS.map(log => (
+                            <tr key={log.id} className="hover:bg-slate-50">
+                                <td className="px-6 py-3 font-mono text-xs text-slate-500">{log.timestamp}</td>
+                                <td className="px-6 py-3 font-medium text-slate-700">{log.operator}</td>
+                                <td className="px-6 py-3 text-slate-600">{log.module}</td>
+                                <td className="px-6 py-3 text-slate-600">{log.action}</td>
+                                <td className="px-6 py-3 text-slate-500 max-w-xs truncate" title={log.details}>{log.details}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        )}
       </div>
   );
 

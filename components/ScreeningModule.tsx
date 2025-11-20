@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, Loader2, ShieldAlert, User, Building2, Globe, AlertTriangle, CheckCircle2, Info, AlertOctagon, Eye, Filter } from 'lucide-react';
+import { Search, Loader2, ShieldAlert, User, Building2, Globe, AlertTriangle, CheckCircle2, Info, AlertOctagon, Eye, Filter, Plus, XCircle, Save } from 'lucide-react';
 import { ScreeningHit, ScreeningCategory, MonitoredEntity, RiskLevel } from '../types';
 import { MOCK_SCREENING_HITS_DB, MOCK_MONITORED_ENTITIES } from '../constants';
 
@@ -16,6 +16,14 @@ export const ScreeningModule: React.FC = () => {
   // Monitoring State
   const [monitoredEntities, setMonitoredEntities] = useState<MonitoredEntity[]>(MOCK_MONITORED_ENTITIES);
   const [monitorFilter, setMonitorFilter] = useState<'all' | 'active' | 'critical'>('all');
+  const [isAdding, setIsAdding] = useState(false);
+
+  // New Entity Form State
+  const [newEntityForm, setNewEntityForm] = useState({
+      name: '',
+      type: '个人',
+      riskLevel: RiskLevel.LOW
+  });
 
   const handleSearch = () => {
     if (!searchTerm.trim()) return;
@@ -35,6 +43,25 @@ export const ScreeningModule: React.FC = () => {
       setSearchResults(hits);
       setIsSearching(false);
     }, 1000);
+  };
+
+  const handleAddEntity = () => {
+      if(!newEntityForm.name) return;
+
+      const newEntity: MonitoredEntity = {
+          id: `ENT-${Date.now()}`,
+          name: newEntityForm.name,
+          type: newEntityForm.type as any,
+          addedDate: new Date().toISOString().split('T')[0],
+          lastScreened: '待扫描',
+          status: '监控中',
+          riskLevel: newEntityForm.riskLevel,
+          hits: []
+      };
+
+      setMonitoredEntities([...monitoredEntities, newEntity]);
+      setIsAdding(false);
+      setNewEntityForm({ name: '', type: '个人', riskLevel: RiskLevel.LOW });
   };
 
   const getRiskBadge = (score: number) => {
@@ -57,6 +84,80 @@ export const ScreeningModule: React.FC = () => {
       if (monitorFilter === 'critical') return entity.riskLevel === RiskLevel.CRITICAL || entity.riskLevel === RiskLevel.HIGH;
       return true;
   });
+
+  const AddEntityModal = () => {
+      if (!isAdding) return null;
+      return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md flex flex-col">
+                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
+                    <h3 className="font-bold text-slate-800">添加监控实体</h3>
+                    <button onClick={() => setIsAdding(false)} className="text-slate-400 hover:text-slate-600">
+                        <XCircle size={20} />
+                    </button>
+                </div>
+                
+                <div className="p-6 space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">实体名称</label>
+                        <input 
+                            type="text" 
+                            className="w-full p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            placeholder="输入姓名或公司名"
+                            value={newEntityForm.name}
+                            onChange={(e) => setNewEntityForm({...newEntityForm, name: e.target.value})}
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">类型</label>
+                        <div className="flex gap-4">
+                            <label className="flex items-center gap-2 text-sm">
+                                <input 
+                                    type="radio" 
+                                    checked={newEntityForm.type === '个人'}
+                                    onChange={() => setNewEntityForm({...newEntityForm, type: '个人'})}
+                                    className="accent-blue-600"
+                                />
+                                个人
+                            </label>
+                            <label className="flex items-center gap-2 text-sm">
+                                <input 
+                                    type="radio" 
+                                    checked={newEntityForm.type === '企业'}
+                                    onChange={() => setNewEntityForm({...newEntityForm, type: '企业'})}
+                                    className="accent-blue-600"
+                                />
+                                企业
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                         <label className="block text-sm font-medium text-slate-700 mb-1">初始风险评级</label>
+                         <select 
+                            className="w-full p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            value={newEntityForm.riskLevel}
+                            onChange={(e) => setNewEntityForm({...newEntityForm, riskLevel: e.target.value as RiskLevel})}
+                         >
+                             <option value={RiskLevel.LOW}>低风险</option>
+                             <option value={RiskLevel.MEDIUM}>中风险</option>
+                             <option value={RiskLevel.HIGH}>高风险</option>
+                             <option value={RiskLevel.CRITICAL}>极高风险</option>
+                         </select>
+                    </div>
+                </div>
+
+                <div className="p-6 border-t border-slate-100 bg-slate-50 rounded-b-xl flex justify-end gap-3">
+                    <button onClick={() => setIsAdding(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg text-sm">取消</button>
+                    <button onClick={handleAddEntity} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 flex items-center gap-2">
+                        <Save size={16} /> 添加并开始监控
+                    </button>
+                </div>
+            </div>
+        </div>
+      );
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in">
@@ -266,8 +367,11 @@ export const ScreeningModule: React.FC = () => {
                         <h3 className="text-lg font-bold text-slate-800 mt-4">2023-10-25 04:00</h3>
                     </div>
                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-center">
-                        <button className="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg shadow-blue-200 font-medium hover:bg-blue-700 transition-colors">
-                            + 添加监控实体
+                        <button 
+                            onClick={() => setIsAdding(true)}
+                            className="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg shadow-blue-200 font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+                        >
+                            <Plus size={18} /> 添加监控实体
                         </button>
                     </div>
                 </div>
@@ -350,6 +454,7 @@ export const ScreeningModule: React.FC = () => {
                 </div>
             </div>
         )}
+        <AddEntityModal />
     </div>
   );
 };

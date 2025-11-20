@@ -1,14 +1,23 @@
 
 import React, { useState } from 'react';
 import { CddCase, CddStatus, RiskLevel } from '../types';
-import { MOCK_CDD_CASES } from '../constants';
-import { ClipboardCheck, Search, Filter, MoreHorizontal, Clock, AlertTriangle, CheckCircle2, XCircle, FileText, Shield, User, Calendar, ArrowRight, AlertOctagon } from 'lucide-react';
+import { MOCK_CDD_CASES, MOCK_CUSTOMERS } from '../constants';
+import { ClipboardCheck, Search, Filter, MoreHorizontal, Clock, AlertTriangle, CheckCircle2, XCircle, FileText, Shield, User, Calendar, ArrowRight, AlertOctagon, Plus, Save } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
 export const CddModule: React.FC = () => {
   const [cases, setCases] = useState<CddCase[]>(MOCK_CDD_CASES);
   const [selectedCase, setSelectedCase] = useState<CddCase | null>(null);
-  const [filterType, setFilterType] = useState<string>('ALL');
+  const [isCreating, setIsCreating] = useState(false);
+
+  // New Case Form State
+  const [newCaseForm, setNewCaseForm] = useState({
+      customerId: '',
+      type: '新户准入',
+      priority: '中',
+      assignee: '',
+      dueDate: ''
+  });
 
   // Kanban Columns
   const columns = [
@@ -33,7 +42,124 @@ export const CddModule: React.FC = () => {
       }
   };
 
+  const handleCreateCase = () => {
+      if (!newCaseForm.customerId || !newCaseForm.dueDate) {
+          alert("请填写完整的案例信息");
+          return;
+      }
+
+      const customer = MOCK_CUSTOMERS.find(c => c.id === newCaseForm.customerId);
+      
+      const newCase: CddCase = {
+          id: `CDD-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000)}`,
+          customerId: newCaseForm.customerId,
+          customerName: customer ? customer.name : 'Unknown',
+          type: newCaseForm.type as any,
+          status: CddStatus.NEW,
+          priority: newCaseForm.priority as any,
+          assignee: newCaseForm.assignee || 'Unassigned',
+          createDate: new Date().toISOString().split('T')[0],
+          dueDate: newCaseForm.dueDate,
+          riskScore: 0, // Initial
+          riskComponents: [],
+          kycChecks: [],
+          comments: []
+      };
+
+      setCases([...cases, newCase]);
+      setIsCreating(false);
+      setNewCaseForm({ customerId: '', type: '新户准入', priority: '中', assignee: '', dueDate: '' });
+  };
+
   // --- Render Sub-components ---
+
+  const NewCaseModal = () => {
+      if (!isCreating) return null;
+
+      return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col">
+                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
+                    <h3 className="font-bold text-slate-800">新建尽职调查案例</h3>
+                    <button onClick={() => setIsCreating(false)} className="text-slate-400 hover:text-slate-600">
+                        <XCircle size={20} />
+                    </button>
+                </div>
+                
+                <div className="p-6 space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">目标客户</label>
+                        <select 
+                            className="w-full p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            value={newCaseForm.customerId}
+                            onChange={(e) => setNewCaseForm({...newCaseForm, customerId: e.target.value})}
+                        >
+                            <option value="">请选择客户...</option>
+                            {MOCK_CUSTOMERS.map(c => (
+                                <option key={c.id} value={c.id}>{c.name} ({c.id})</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">调查类型</label>
+                            <select 
+                                className="w-full p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                value={newCaseForm.type}
+                                onChange={(e) => setNewCaseForm({...newCaseForm, type: e.target.value})}
+                            >
+                                <option value="新户准入">新户准入</option>
+                                <option value="定期复核">定期复核</option>
+                                <option value="触发式调查">触发式调查</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">优先级</label>
+                            <select 
+                                className="w-full p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                value={newCaseForm.priority}
+                                onChange={(e) => setNewCaseForm({...newCaseForm, priority: e.target.value})}
+                            >
+                                <option value="高">高</option>
+                                <option value="中">中</option>
+                                <option value="低">低</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                         <label className="block text-sm font-medium text-slate-700 mb-1">经办人员 (可选)</label>
+                         <input 
+                            type="text" 
+                            className="w-full p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            placeholder="输入用户名"
+                            value={newCaseForm.assignee}
+                            onChange={(e) => setNewCaseForm({...newCaseForm, assignee: e.target.value})}
+                         />
+                    </div>
+
+                    <div>
+                         <label className="block text-sm font-medium text-slate-700 mb-1">截止日期</label>
+                         <input 
+                            type="date" 
+                            className="w-full p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            value={newCaseForm.dueDate}
+                            onChange={(e) => setNewCaseForm({...newCaseForm, dueDate: e.target.value})}
+                         />
+                    </div>
+                </div>
+
+                <div className="p-6 border-t border-slate-100 bg-slate-50 rounded-b-xl flex justify-end gap-3">
+                    <button onClick={() => setIsCreating(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg text-sm">取消</button>
+                    <button onClick={handleCreateCase} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 flex items-center gap-2">
+                        <Save size={16} /> 创建案例
+                    </button>
+                </div>
+            </div>
+        </div>
+      );
+  };
 
   const CaseCard = ({ cddCase }: { cddCase: CddCase }) => (
       <div 
@@ -282,8 +408,11 @@ export const CddModule: React.FC = () => {
                         className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
                      />
                  </div>
-                 <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-lg shadow-blue-200">
-                     + 新建尽调案例
+                 <button 
+                    onClick={() => setIsCreating(true)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-lg shadow-blue-200 flex items-center gap-2"
+                 >
+                     <Plus size={16} /> 新建尽调案例
                  </button>
             </div>
         </div>
@@ -322,6 +451,7 @@ export const CddModule: React.FC = () => {
         </div>
 
         <DetailModal />
+        <NewCaseModal />
     </div>
   );
 };
